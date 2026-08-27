@@ -1,0 +1,7 @@
+node_modules/
+telecoms-app/node_modules/
+telecoms-app/dist/
+dist/
+.DS_Store
+*.log
+.vscode/
