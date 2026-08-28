@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Wire, WireColor, ScopeSettings, WireAction } from "../types";
+import { audioEngine } from "../audio/AudioEngine";
 
 const WIRE_COLORS: WireColor[] = [
   "#e74c3c", "#2ecc71", "#f1c40f", "#3498db", "#ecf0f1", "#e67e22", "#9b59b6",
@@ -197,13 +198,15 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
     }
   },
 
-  setParam: (blockId, key, value) =>
+  setParam: (blockId, key, value) => {
     set((s) => ({
       params: {
         ...s.params,
         [blockId]: { ...(s.params[blockId] || {}), [key]: value },
       },
-    })),
+    }));
+    audioEngine.updateParam(blockId, key, value);
+  },
 
   getParam: (blockId, key, fallback) => {
     const p = get().params[blockId];
@@ -263,6 +266,9 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
       const mergedParams = { ...currentParams };
       for (const [blockId, blockParams] of Object.entries(params)) {
         mergedParams[blockId] = { ...(mergedParams[blockId] || {}), ...blockParams };
+        for (const [k, v] of Object.entries(blockParams)) {
+          audioEngine.updateParam(blockId, k, v);
+        }
       }
       set({ params: mergedParams });
     }
