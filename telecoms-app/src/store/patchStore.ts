@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Wire, WireColor, Port, ScopeSettings } from "../types";
+import type { Wire, WireColor, ScopeSettings, WireAction } from "../types";
 
 const WIRE_COLORS: WireColor[] = [
   "#e74c3c", "#2ecc71", "#f1c40f", "#3498db", "#ecf0f1", "#e67e22", "#9b59b6",
@@ -7,7 +7,7 @@ const WIRE_COLORS: WireColor[] = [
 
 // ─── Store ────────────────────────────────────────────────────────
 // Ports are registered dynamically by the board renderer.
-// This store only manages wires, scope, and params.
+// This store manages wires, scope, params, and undo/redo history.
 
 interface PatchStore {
   wires: Wire[];
@@ -16,6 +16,19 @@ interface PatchStore {
   scopeSettings: ScopeSettings;
   wiringFrom: string | null;
   params: Record<string, Record<string, number | string>>;
+
+  // Undo / Redo
+  undoStack: WireAction[];
+  redoStack: WireAction[];
+  undo: () => void;
+  redo: () => void;
+
+  // Guide Mode
+  guideHighlights: string[];          // Port IDs to glow
+  guideStep: number;                  // Current step in guide sequence
+  setGuideHighlights: (ports: string[], step?: number) => void;
+  clearGuide: () => void;
+  advanceGuide: () => void;
 
   registerPort: (id: string, x: number, y: number, type: "digital" | "analog", direction: "in" | "out") => void;
   startWire: (portId: string) => void;
@@ -27,6 +40,7 @@ interface PatchStore {
   setScopeSettings: (settings: Partial<ScopeSettings>) => void;
   resetPatch: () => void;
   getPortPos: (portId: string) => { x: number; y: number } | null;
+  loadPreset: (wires: { fromPortId: string; toPortId: string; color: WireColor }[], params?: Record<string, Record<string, number | string>>, scopeSettings?: Partial<ScopeSettings>) => void;
 }
 
 let wireCounter = 100;
@@ -36,6 +50,10 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
   ports: new Map(),
   selectedWireColor: "#e74c3c",
   wiringFrom: null,
+  undoStack: [],
+  redoStack: [],
+  guideHighlights: [],
+  guideStep: 0,
   params: {
     tuneable_lpf: { fc: 3000, gain: 1.0 },
     sequence_generator: { lineCode: "NRZ-L" },
@@ -86,13 +104,98 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
       toPortId: dst,
       color: state.selectedWireColor,
     };
-    set({ wires: [...state.wires, wire], wiringFrom: null });
+    set({
+      wires: [...state.wires, wire],
+      wiringFrom: null,
+      undoStack: [...state.undoStack, { type: "add", wire }],
+      redoStack: [],
+    });
   },
 
   cancelWire: () => set({ wiringFrom: null }),
 
-  removeWire: (wireId) =>
-    set((s) => ({ wires: s.wires.filter((w) => w.id !== wireId) })),
+  removeWire: (wireId) => {
+    const state = get();
+    const wire = state.wires.find((w) => w.id === wireId);
+    if (!wire) return;
+    set({
+      wires: state.wires.filter((w) => w.id !== wireId),
+      undoStack: [...state.undoStack, { type: "remove", wire }],
+      redoStack: [],
+    });
+  },
+
+  // ─── Undo ───────────────────────────────────────────────────────
+  undo: () => {
+    const state = get();
+    if (state.undoStack.length === 0) return;
+
+    const action = state.undoStack[state.undoStack.length - 1];
+    const newUndoStack = state.undoStack.slice(0, -1);
+
+    switch (action.type) {
+      case "add":
+        // Undo an add → remove the wire
+        set({
+          wires: state.wires.filter((w) => w.id !== action.wire.id),
+          undoStack: newUndoStack,
+          redoStack: [...state.redoStack, action],
+        });
+        break;
+      case "remove":
+        // Undo a remove → re-add the wire
+        set({
+          wires: [...state.wires, action.wire],
+          undoStack: newUndoStack,
+          redoStack: [...state.redoStack, action],
+        });
+        break;
+      case "reset":
+        // Undo a reset → restore previous wires
+        set({
+          wires: action.previousWires,
+          undoStack: newUndoStack,
+          redoStack: [...state.redoStack, { type: "reset", previousWires: state.wires }],
+        });
+        break;
+    }
+  },
+
+  // ─── Redo ───────────────────────────────────────────────────────
+  redo: () => {
+    const state = get();
+    if (state.redoStack.length === 0) return;
+
+    const action = state.redoStack[state.redoStack.length - 1];
+    const newRedoStack = state.redoStack.slice(0, -1);
+
+    switch (action.type) {
+      case "add":
+        // Redo an add → re-add the wire
+        set({
+          wires: [...state.wires, action.wire],
+          undoStack: [...state.undoStack, action],
+          redoStack: newRedoStack,
+        });
+        break;
+      case "remove":
+        // Redo a remove → remove the wire again
+        set({
+          wires: state.wires.filter((w) => w.id !== action.wire.id),
+          undoStack: [...state.undoStack, action],
+          redoStack: newRedoStack,
+        });
+        break;
+      case "reset":
+        // Redo a reset → clear wires again
+        set({
+          wires: action.previousWires,
+          undoStack: [...state.undoStack, { type: "reset", previousWires: state.wires }],
+          redoStack: newRedoStack,
+        });
+        break;
+    }
+  },
 
   setParam: (blockId, key, value) =>
     set((s) => ({
@@ -112,12 +215,69 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
   setScopeSettings: (settings) =>
     set((s) => ({ scopeSettings: { ...s.scopeSettings, ...settings } })),
 
-  resetPatch: () => set({ wires: [], wiringFrom: null }),
+  resetPatch: () => {
+    const state = get();
+    if (state.wires.length === 0) return;
+    set({
+      wires: [],
+      wiringFrom: null,
+      undoStack: [...state.undoStack, { type: "reset", previousWires: [...state.wires] }],
+      redoStack: [],
+    });
+  },
 
   getPortPos: (portId) => {
     const p = get().ports.get(portId);
     return p ? { x: p.x, y: p.y } : null;
   },
+
+  // ─── Load Lab Preset ───────────────────────────────────────────
+  loadPreset: (presetWires, params, scopeSettings) => {
+    const state = get();
+
+    // Save current state for undo
+    const undoAction: WireAction = { type: "reset", previousWires: [...state.wires] };
+
+    // Build Wire objects from preset
+    const newWires: Wire[] = presetWires.map((pw, i) => ({
+      id: `wire_${wireCounter++}`,
+      fromPortId: pw.fromPortId,
+      toPortId: pw.toPortId,
+      color: pw.color,
+    }));
+
+    const updates: Partial<PatchStore> = {
+      wires: newWires,
+      wiringFrom: null,
+      undoStack: [...state.undoStack, undoAction],
+      redoStack: [],
+      guideHighlights: [],
+      guideStep: 0,
+    };
+
+    set(updates as any);
+
+    // Apply params if provided
+    if (params) {
+      const currentParams = get().params;
+      const mergedParams = { ...currentParams };
+      for (const [blockId, blockParams] of Object.entries(params)) {
+        mergedParams[blockId] = { ...(mergedParams[blockId] || {}), ...blockParams };
+      }
+      set({ params: mergedParams });
+    }
+
+    // Apply scope settings if provided
+    if (scopeSettings) {
+      const currentScope = get().scopeSettings;
+      set({ scopeSettings: { ...currentScope, ...scopeSettings } });
+    }
+  },
+
+  // ─── Guide Mode ─────────────────────────────────────────────────
+  setGuideHighlights: (ports, step = 0) => set({ guideHighlights: ports, guideStep: step }),
+  clearGuide: () => set({ guideHighlights: [], guideStep: 0 }),
+  advanceGuide: () => set((s) => ({ guideStep: s.guideStep + 1 })),
 
   scopeSettings: {
     timebaseMs: 0.5,

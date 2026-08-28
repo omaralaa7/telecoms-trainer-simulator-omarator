@@ -26,6 +26,7 @@ function PortJack({
   const registerPort = usePatchStore((s) => s.registerPort);
   const startWire = usePatchStore((s) => s.startWire);
   const wiringFrom = usePatchStore((s) => s.wiringFrom);
+  const guideHighlights = usePatchStore((s) => s.guideHighlights);
 
   useEffect(() => {
     registerPort(id, x, y, type, direction);
@@ -33,13 +34,14 @@ function PortJack({
 
   const isActive = wiringFrom === id;
   const isTarget = wiringFrom !== null && wiringFrom !== id;
+  const isGuided = guideHighlights.includes(id);
 
   const sz = 16;
   const r = sz / 2;
   const hitSz = 28;
-  const fill = isActive ? "#ff4444" : isTarget ? "#4ecdc4" : "#111";
-  const stroke = isActive ? "#ff4444" : isTarget ? "#4ecdc4" : "#333";
-  const sw = isActive ? 2.5 : isTarget ? 2 : 1.8;
+  const fill = isActive ? "#ff4444" : isTarget ? "#4ecdc4" : isGuided ? "#2ecc71" : "#111";
+  const stroke = isActive ? "#ff4444" : isTarget ? "#4ecdc4" : isGuided ? "#2ecc71" : "#333";
+  const sw = isActive ? 2.5 : isTarget ? 2 : isGuided ? 2.5 : 1.8;
 
   let lx = x;
   let ly = y;
@@ -126,6 +128,31 @@ function PortJack({
           opacity={0.4}
           pointerEvents="none"
         />
+      )}
+      {isGuided && !isActive && (
+        <circle
+          cx={x}
+          cy={y}
+          r={r + 6}
+          fill="none"
+          stroke="#2ecc71"
+          strokeWidth={2.5}
+          opacity={0.9}
+          pointerEvents="none"
+        >
+          <animate
+            attributeName="r"
+            values={`${r + 4};${r + 10};${r + 4}`}
+            dur="1.2s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.9;0.3;0.9"
+            dur="1.2s"
+            repeatCount="indefinite"
+          />
+        </circle>
       )}
 
       {labelPos !== "none" && label && (

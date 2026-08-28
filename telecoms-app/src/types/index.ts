@@ -123,3 +123,36 @@ export const LINE_CODE_MAP: Record<string, LineCode> = {
   "10": "RZ-AMI",
   "11": "NRZ-M",
 };
+
+// ─── Wire History (Undo / Redo) ───────────────────────────────────
+
+export type WireAction =
+  | { type: "add"; wire: Wire }
+  | { type: "remove"; wire: Wire }
+  | { type: "reset"; previousWires: Wire[] };
+
+// ─── Lab Experiments ──────────────────────────────────────────────
+
+export interface PresetWire {
+  fromPortId: string;
+  toPortId: string;
+  color: WireColor;
+}
+
+export interface LabPart {
+  id: string;
+  title: string;
+  description: string;
+  wires: PresetWire[];
+  scopeSettings?: Partial<ScopeSettings>;
+  params?: Record<string, Record<string, number | string>>;
+}
+
+export interface LabExperiment {
+  id: string;
+  title: string;
+  labNumber: number;
+  expNumber: number;
+  description: string;
+  parts: LabPart[];
+}

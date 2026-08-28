@@ -1,12 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import PatchPanel from "./components/PatchPanel/PatchPanel";
 import Oscilloscope from "./components/Oscilloscope/Oscilloscope";
+import LabExperimentsHub from "./components/LabExperiments/LabExperimentsHub";
 import { audioEngine } from "./audio/AudioEngine";
 import { usePatchStore } from "./store/patchStore";
 import "./App.css";
 
 function App() {
   const wires = usePatchStore((s) => s.wires);
+  const undoStack = usePatchStore((s) => s.undoStack);
+  const redoStack = usePatchStore((s) => s.redoStack);
+  const undo = usePatchStore((s) => s.undo);
+  const redo = usePatchStore((s) => s.redo);
   const [audioStarted, setAudioStarted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +42,24 @@ function App() {
     return () => { audioEngine.destroy(); };
   }, []);
 
+  // ─── Keyboard Shortcuts: Ctrl+Z (undo), Ctrl+Y / Ctrl+Shift+Z (redo) ───
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCtrl = e.ctrlKey || e.metaKey;
+      if (!isCtrl) return;
+
+      if (e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -53,10 +76,39 @@ function App() {
         </div>
 
         <div className="app-actions">
+          {/* Lab Experiments Hub */}
+          <LabExperimentsHub />
+
           <div className="telemetry-badge">
             <span className="telemetry-label">WIRES:</span>
             <span className="telemetry-val">{wires.length}</span>
           </div>
+
+          {/* Undo Button */}
+          <button
+            className={`header-icon-btn undo-btn ${undoStack.length === 0 ? "disabled" : ""}`}
+            onClick={undo}
+            disabled={undoStack.length === 0}
+            title="Undo last wire action (Ctrl+Z)"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+          </button>
+
+          {/* Redo Button */}
+          <button
+            className={`header-icon-btn redo-btn ${redoStack.length === 0 ? "disabled" : ""}`}
+            onClick={redo}
+            disabled={redoStack.length === 0}
+            title="Redo wire action (Ctrl+Y)"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10" />
+            </svg>
+          </button>
 
           <button
             className={`primary-power-btn ${audioStarted ? "power-btn-off" : "power-btn-on"}`}
