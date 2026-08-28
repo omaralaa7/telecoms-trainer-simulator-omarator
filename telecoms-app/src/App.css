@@ -670,14 +670,14 @@ body {
   color: var(--text-primary);
 }
 
-/* ─── Scope Action Buttons (Solid, Unmistakable Buttons) ─── */
-.scope-action-btn {
+/* ─── Scope Action Button (Full-width Clear RUN / FROZEN State) ─── */
+.scope-toggle-btn {
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: var(--radius-sm);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -686,99 +686,38 @@ body {
   border: 1px solid;
   transition: all var(--transition-fast);
   letter-spacing: 0.8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.scope-action-btn svg {
+.scope-toggle-btn svg {
   flex-shrink: 0;
 }
 
-/* ─── Scope Action Buttons (Dedicated RUN, STOP, SINGLE) ─── */
-.scope-action-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 7px 8px;
-  border-radius: var(--radius-sm);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  font-weight: 800;
-  cursor: pointer;
-  border: 1px solid;
-  transition: all var(--transition-fast);
-  letter-spacing: 0.6px;
-}
-
-.scope-action-btn svg {
-  flex-shrink: 0;
-}
-
-/* Active RUN button (Lit Green) */
-.btn-run-active {
+/* Active Live Sweeping (Emerald Green) */
+.scope-toggle-running {
   background: linear-gradient(135deg, #2ecc71, #27ae60);
   color: #ffffff;
   border-color: #2ecc71;
   box-shadow: 0 0 12px rgba(46, 204, 113, 0.45);
 }
 
-.btn-run-active:hover {
+.scope-toggle-running:hover {
   background: linear-gradient(135deg, #40d47e, #2ecc71);
   box-shadow: 0 0 16px rgba(46, 204, 113, 0.65);
+  transform: translateY(-1px);
 }
 
-/* Inactive RUN button (Dimmed) */
-.btn-run-inactive {
-  background: rgba(46, 204, 113, 0.05);
-  color: #6b8073;
-  border-color: rgba(46, 204, 113, 0.2);
-}
-
-.btn-run-inactive:hover {
-  background: rgba(46, 204, 113, 0.15);
-  color: #2ecc71;
-  border-color: rgba(46, 204, 113, 0.4);
-}
-
-/* Active STOP button (Lit Red) */
-.btn-stop-active {
+/* Frozen / Paused (Crimson Red) */
+.scope-toggle-frozen {
   background: linear-gradient(135deg, #e74c3c, #c0392b);
   color: #ffffff;
   border-color: #ff6b6b;
   box-shadow: 0 0 12px rgba(231, 76, 60, 0.45);
 }
 
-.btn-stop-active:hover {
+.scope-toggle-frozen:hover {
   background: linear-gradient(135deg, #ff6b6b, #e74c3c);
   box-shadow: 0 0 16px rgba(231, 76, 60, 0.65);
-}
-
-/* Inactive STOP button (Dimmed) */
-.btn-stop-inactive {
-  background: rgba(231, 76, 60, 0.05);
-  color: #856a68;
-  border-color: rgba(231, 76, 60, 0.2);
-}
-
-.btn-stop-inactive:hover {
-  background: rgba(231, 76, 60, 0.15);
-  color: #ff6b6b;
-  border-color: rgba(231, 76, 60, 0.4);
-}
-
-/* SINGLE button (Amber) */
-.btn-single {
-  background: rgba(243, 156, 18, 0.1);
-  color: #f39c12;
-  border-color: rgba(243, 156, 18, 0.3);
-}
-
-.btn-single:hover {
-  background: linear-gradient(135deg, #f39c12, #d35400);
-  color: #ffffff;
-  border-color: #f1c40f;
-  box-shadow: 0 0 12px rgba(243, 156, 18, 0.5);
   transform: translateY(-1px);
 }
 
