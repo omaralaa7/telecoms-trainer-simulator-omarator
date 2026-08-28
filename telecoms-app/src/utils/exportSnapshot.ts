@@ -7,17 +7,35 @@
 
 export async function captureLabSnapshot(): Promise<void> {
   try {
-    // 1. Locate the board SVG and scope canvas
-    const svgElement = document.querySelector(".patch-board-svg") as SVGSVGElement | null;
-    const scopeCanvas = document.querySelector(".scope-canvas") as HTMLCanvasElement | null;
+    // 1. Locate the board SVG and scope canvas with fallback selectors
+    const svgElement = (
+      document.querySelector(".patch-panel-svg") ||
+      document.querySelector("svg.patch-panel-svg") ||
+      document.querySelector(".patch-panel-container svg") ||
+      document.querySelector("svg")
+    ) as SVGSVGElement | null;
+
+    const scopeCanvas = (
+      document.querySelector(".scope-canvas") ||
+      document.querySelector("canvas.scope-canvas") ||
+      document.querySelector(".scope-screen-container canvas") ||
+      document.querySelector("canvas")
+    ) as HTMLCanvasElement | null;
 
     if (!svgElement) {
       alert("Trainer board not found for snapshot.");
       return;
     }
 
-    // 2. Render SVG board to an offscreen Image
-    const svgData = new XMLSerializer().serializeToString(svgElement);
+    // 2. Clone SVG and ensure required XML attributes for rasterization
+    const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
+    clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clonedSvg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    clonedSvg.setAttribute("width", "1080");
+    clonedSvg.setAttribute("height", "680");
+
+    // Copy computed styles or embed stylesheet so board fonts & colors render
+    const svgData = new XMLSerializer().serializeToString(clonedSvg);
     const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
     const URL = window.URL || window.webkitURL || window;
     const svgBlobUrl = URL.createObjectURL(svgBlob);
@@ -25,22 +43,22 @@ export async function captureLabSnapshot(): Promise<void> {
     const boardImg = new Image();
     await new Promise<void>((resolve, reject) => {
       boardImg.onload = () => resolve();
-      boardImg.onerror = (e) => reject(e);
+      boardImg.onerror = (err) => reject(err);
       boardImg.src = svgBlobUrl;
     });
 
-    // 3. Setup composite canvas dimensions
+    // 3. Setup composite canvas dimensions (High-Res 1920x1080+ format)
     const outputWidth = 1920;
-    const boardAspect = boardImg.width / (boardImg.height || 1);
-    const boardRenderHeight = Math.round(outputWidth / boardAspect);
+    const boardAspect = 1080 / 680;
+    const boardRenderHeight = Math.round((outputWidth - 80) / boardAspect);
 
     const scopeAspect = scopeCanvas ? (scopeCanvas.width / (scopeCanvas.height || 1)) : (800 / 480);
-    const scopeRenderWidth = 1200;
+    const scopeRenderWidth = 1100;
     const scopeRenderHeight = Math.round(scopeRenderWidth / scopeAspect);
 
-    const headerHeight = 90;
-    const footerHeight = 50;
-    const padding = 30;
+    const headerHeight = 96;
+    const footerHeight = 56;
+    const padding = 36;
 
     const totalHeight =
       headerHeight +
@@ -61,13 +79,19 @@ export async function captureLabSnapshot(): Promise<void> {
     ctx.fillRect(0, 0, outputWidth, totalHeight);
 
     // ─── Header Banner ───────────────────────────────────────────
-    ctx.fillStyle = "#151e2a";
+    ctx.fillStyle = "#141c28";
     ctx.fillRect(0, 0, outputWidth, headerHeight);
-    ctx.fillStyle = "#f39c12";
-    ctx.fillRect(0, headerHeight - 3, outputWidth, 3);
+    
+    // Golden accent bottom border
+    const gradient = ctx.createLinearGradient(0, 0, outputWidth, 0);
+    gradient.addColorStop(0, "#f39c12");
+    gradient.addColorStop(0.5, "#e67e22");
+    gradient.addColorStop(1, "#3498db");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, headerHeight - 4, outputWidth, 4);
 
     // Header Title
-    ctx.font = "bold 26px 'Inter', sans-serif";
+    ctx.font = "bold 28px 'Inter', sans-serif";
     ctx.fillStyle = "#ffffff";
     ctx.fillText("EMONA Telecoms-Trainer 101 — Lab Report Snapshot", padding, 44);
 
@@ -84,34 +108,33 @@ export async function captureLabSnapshot(): Promise<void> {
 
     ctx.font = "14px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#8a9ba8";
-    ctx.fillText(`CAPTURED: ${dateStr}  •  VIRTUAL DSP SIMULATOR`, padding, 70);
+    ctx.fillText(`CAPTURED: ${dateStr}  •  REAL-TIME DSP SIMULATOR`, padding, 74);
 
-    // ─── Draw Trainer Board ───────────────────────────────────────
+    // ─── 1. Trainer Board Section ─────────────────────────────────
     let currentY = headerHeight + padding;
 
-    // Board Section Title
-    ctx.font = "bold 16px 'Inter', sans-serif";
+    // Section Badge
+    ctx.font = "bold 16px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#f39c12";
-    ctx.fillText("1. TRAINER BOARD PATCH WIRING", padding, currentY - 10);
+    ctx.fillText("▶ 1. TRAINER BOARD PATCH CONNECTIONS", padding, currentY - 12);
 
     // Draw board
     ctx.drawImage(boardImg, 0, 0, boardImg.width, boardImg.height, padding, currentY, outputWidth - (padding * 2), boardRenderHeight);
     URL.revokeObjectURL(svgBlobUrl);
 
-    // ─── Draw Oscilloscope Screen ─────────────────────────────────
-    currentY += boardRenderHeight + padding + 20;
+    // ─── 2. Oscilloscope Section ──────────────────────────────────
+    currentY += boardRenderHeight + padding + 16;
 
-    ctx.font = "bold 16px 'Inter', sans-serif";
-    ctx.fillStyle = "#2ecc71";
-    ctx.fillText("2. DUAL-TRACE OSCILLOSCOPE OUTPUT", padding, currentY - 10);
+    ctx.font = "bold 16px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#00b4d8";
+    ctx.fillText("▶ 2. DUAL-TRACE OSCILLOSCOPE WAVEFORMS", padding, currentY - 12);
 
     if (scopeCanvas) {
-      // Centered scope display
       const scopeX = (outputWidth - scopeRenderWidth) / 2;
 
       // Outer bezel frame
       ctx.fillStyle = "#05090e";
-      ctx.strokeStyle = "rgba(46, 204, 113, 0.4)";
+      ctx.strokeStyle = "rgba(0, 180, 216, 0.4)";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.roundRect(scopeX - 8, currentY - 8, scopeRenderWidth + 16, scopeRenderHeight + 16, 8);
@@ -126,13 +149,13 @@ export async function captureLabSnapshot(): Promise<void> {
     ctx.fillStyle = "#101620";
     ctx.fillRect(0, totalHeight - footerHeight, outputWidth, footerHeight);
 
-    ctx.font = "12px 'JetBrains Mono', monospace";
+    ctx.font = "13px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#5c7080";
     ctx.textAlign = "center";
     ctx.fillText(
-      "EMONA ETT-101 Telecoms Trainer Simulator  •  Real-Time DSP Signal Engine  •  Dual-Trace CRO",
+      "EMONA ETT-101 Virtual Telecoms Trainer  •  Real-Time DSP Signal Engine  •  Dual-Trace CRO",
       outputWidth / 2,
-      totalHeight - 20
+      totalHeight - 22
     );
 
     // ─── Trigger File Download ───────────────────────────────────
@@ -145,6 +168,6 @@ export async function captureLabSnapshot(): Promise<void> {
     document.body.removeChild(link);
   } catch (err) {
     console.error("Failed to capture lab snapshot:", err);
-    alert("Could not generate snapshot. Please ensure the board and scope are visible.");
+    alert("Could not generate snapshot. Please check browser permissions.");
   }
 }
