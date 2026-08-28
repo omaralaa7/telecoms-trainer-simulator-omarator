@@ -115,25 +115,31 @@ export default function ScopeControls() {
         </div>
       </div>
 
-      {/* Row 5: Run/Stop + Single */}
+      {/* Row 5: Dedicated RUN, STOP, SINGLE Buttons */}
       <div className="scope-controls-row scope-btn-row">
         <button
-          className={`scope-action-btn ${scopeSettings.running ? "scope-btn-stop" : "scope-btn-run"}`}
-          onClick={() => setScopeSettings({ running: !scopeSettings.running })}>
-          {scopeSettings.running ? (
-            <>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg>
-              <span>STOP</span>
-            </>
-          ) : (
-            <>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>RUN</span>
-            </>
-          )}
+          className={`scope-action-btn ${scopeSettings.running ? "btn-run-active" : "btn-run-inactive"}`}
+          onClick={() => setScopeSettings({ running: true })}
+          title="Start continuous live sweep"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>RUN</span>
         </button>
-        <button className="scope-action-btn scope-btn-single"
-          onClick={() => { setScopeSettings({ running: true }); setTimeout(() => setScopeSettings({ running: false }), 50); }}>
+
+        <button
+          className={`scope-action-btn ${!scopeSettings.running ? "btn-stop-active" : "btn-stop-inactive"}`}
+          onClick={() => setScopeSettings({ running: false })}
+          title="Freeze / Stop waveform sweep"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg>
+          <span>STOP</span>
+        </button>
+
+        <button
+          className="scope-action-btn btn-single"
+          onClick={() => { setScopeSettings({ running: true }); setTimeout(() => setScopeSettings({ running: false }), 50); }}
+          title="Capture single waveform sweep"
+        >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16h5v-8h8v8h5"/></svg>
           <span>SINGLE</span>
         </button>
