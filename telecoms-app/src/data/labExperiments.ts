@@ -163,7 +163,7 @@ const lab2: LabExperiment = {
       title: "Part B: Encoding Variable DC Voltage",
       description:
         "Connect the Variable DCV output to PCM Encoder INPUT 1. Adjust the DC voltage from -2.5V to +2.5V and observe the 8-bit binary code change on CH1 from 00000000 (min) to 11111111 (max).",
-      diagramUrl: dUrl("lab2_fig5.png"),
+      diagramUrl: dUrl("lab2_fig8.png"),
       figureLabel: "Figure 8: Variable DC Voltage PCM Encoding Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
@@ -189,7 +189,7 @@ const lab2: LabExperiment = {
       title: "Part C: Encoding AC Sinewave",
       description:
         "Feed a continuous 2 kHz sine wave into the PCM Encoder. Observe how the serial PCM bit pattern changes dynamically as the analog signal varies across each quantized sampling interval.",
-      diagramUrl: dUrl("lab2_fig7.png"),
+      diagramUrl: dUrl("lab2_fig4.png"),
       figureLabel: "Figure 4: AC Sinewave PCM Encoding Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
@@ -223,37 +223,34 @@ const lab3: LabExperiment = {
   parts: [
     {
       id: "lab3_a",
-      title: "Part A: Basic Encode–Decode Loop",
+      title: "Part A: Checking the PCM Encoder (Sine Input)",
       description:
-        "Wire the PCM Encoder output directly into the PCM Decoder with stolen CLK and FS signals. Observe the reconstructed staircase PAM analog output on CH1 compared to the original message on CH2.",
-      diagramUrl: dUrl("lab3_fig3.png"),
-      figureLabel: "Figure 6: PCM Decode Loop Block Diagram",
+        "Feed the 2 kHz Sine wave into the PCM Encoder. Check the serial PCM DATA bit stream on CH2 synchronized to the Frame Sync (FS) pulses on CH1.",
+      diagramUrl: dUrl("lab3_fig4.png"),
+      figureLabel: "Figure 4: PCM Encoder Sine Input Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
         { fromPortId: "ms.2k_sine", toPortId: "pcme.in1", color: autoColor(2) },
-        { fromPortId: "pcme.pcm_data", toPortId: "pcmd.pcm_data", color: autoColor(3) },
-        { fromPortId: "ms.2k_dig", toPortId: "pcmd.clk", color: autoColor(4) },
-        { fromPortId: "ms.8k_dig", toPortId: "pcmd.fs", color: autoColor(5) },
-        { fromPortId: "pcmd.out", toPortId: "scope.ch1", color: autoColor(6) },
-        { fromPortId: "ms.2k_sine", toPortId: "scope.ch2", color: autoColor(0) },
+        { fromPortId: "pcme.pcm_data", toPortId: "scope.ch2", color: autoColor(3) },
+        { fromPortId: "ms.8k_dig", toPortId: "scope.ch1", color: autoColor(4) },
       ],
       scopeSettings: {
         timebaseMs: 0.2,
         ch1VPerDiv: 1,
         ch2VPerDiv: 1,
-        triggerSource: "ch2",
+        triggerSource: "ch1",
         triggerEdge: "rising",
         running: true,
       },
     },
     {
       id: "lab3_b",
-      title: "Part B: Listening via Buffer / Headphones",
+      title: "Part B: PCM Encode–Decode Loop (Stolen CLK & FS)",
       description:
-        "Route the decoded PAM output through the Buffer amplifier module. Observe the buffered output on CH1 and hear the quantization noise inherent in 8-bit quantized audio.",
+        "Connect the PCM Encoder data to the PCM Decoder with stolen CLK and FS signals. Observe the reconstructed staircase PAM analog output on CH2 compared to the original message on CH1.",
       diagramUrl: dUrl("lab3_fig6.png"),
-      figureLabel: "Figure 6: PCM Decoding with Buffer Block Diagram",
+      figureLabel: "Figure 6: PCM Encode–Decode Loop Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
@@ -261,28 +258,24 @@ const lab3: LabExperiment = {
         { fromPortId: "pcme.pcm_data", toPortId: "pcmd.pcm_data", color: autoColor(3) },
         { fromPortId: "ms.2k_dig", toPortId: "pcmd.clk", color: autoColor(4) },
         { fromPortId: "ms.8k_dig", toPortId: "pcmd.fs", color: autoColor(5) },
-        { fromPortId: "pcmd.out", toPortId: "buf.in", color: autoColor(6) },
-        { fromPortId: "buf.out", toPortId: "scope.ch1", color: autoColor(0) },
-        { fromPortId: "ms.2k_sine", toPortId: "scope.ch2", color: autoColor(1) },
+        { fromPortId: "ms.2k_sine", toPortId: "scope.ch1", color: autoColor(0) },
+        { fromPortId: "pcmd.out", toPortId: "scope.ch2", color: autoColor(6) },
       ],
       scopeSettings: {
         timebaseMs: 0.2,
         ch1VPerDiv: 1,
         ch2VPerDiv: 1,
-        triggerSource: "ch2",
+        triggerSource: "ch1",
         triggerEdge: "rising",
         running: true,
-      },
-      params: {
-        buffer: { gain: 1.0 },
       },
     },
     {
       id: "lab3_c",
-      title: "Part C: Reconstruction with Tuneable LPF",
+      title: "Part C: Signal Reconstruction via Tuneable LPF",
       description:
-        "Pass the decoded staircase PAM through the Tuneable LPF to filter out quantization harmonics. Compare the cleanly reconstructed sine wave on CH1 with the original message on CH2.",
-      diagramUrl: dUrl("lab3_fig8.png"),
+        "Pass the decoded staircase PAM through the Tuneable LPF to filter out quantization harmonics. Compare the cleanly reconstructed sine wave on CH2 with the original message on CH1.",
+      diagramUrl: dUrl("lab3_fig11.png"),
       figureLabel: "Figure 11: PCM Signal Reconstruction Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
@@ -292,14 +285,14 @@ const lab3: LabExperiment = {
         { fromPortId: "ms.2k_dig", toPortId: "pcmd.clk", color: autoColor(4) },
         { fromPortId: "ms.8k_dig", toPortId: "pcmd.fs", color: autoColor(5) },
         { fromPortId: "pcmd.out", toPortId: "tlpf.in", color: autoColor(6) },
-        { fromPortId: "tlpf.out", toPortId: "scope.ch1", color: autoColor(0) },
-        { fromPortId: "ms.2k_sine", toPortId: "scope.ch2", color: autoColor(1) },
+        { fromPortId: "ms.2k_sine", toPortId: "scope.ch1", color: autoColor(0) },
+        { fromPortId: "tlpf.out", toPortId: "scope.ch2", color: autoColor(1) },
       ],
       scopeSettings: {
         timebaseMs: 0.2,
         ch1VPerDiv: 1,
         ch2VPerDiv: 1,
-        triggerSource: "ch2",
+        triggerSource: "ch1",
         triggerEdge: "rising",
         running: true,
       },
@@ -326,7 +319,7 @@ const lab4: LabExperiment = {
       title: "Part A: ISI from Bandwidth-Limited Channel",
       description:
         "Pass the Sequence Generator's NRZ-L digital sequence through the Tuneable LPF channel. Observe the distorted, rounded pulses on CH2 due to ISI and compare with the crisp digital input on CH1.",
-      diagramUrl: dUrl("lab4_fig3.png"),
+      diagramUrl: dUrl("lab4_fig8.png"),
       figureLabel: "Figure 8: Bandwidth-Limited Channel Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "seq.clk", color: autoColor(0) },
@@ -349,15 +342,15 @@ const lab4: LabExperiment = {
     },
     {
       id: "lab4_b",
-      title: "Part B: Eye Diagram Generation",
+      title: "Part B: Variable Bit Rate & Eye Diagram (VCO Clock)",
       description:
-        "Trigger the oscilloscope using the Sequence Generator's SYNC clock output. Overlapping multiple bit transitions forms an 'eye diagram' on CH1, revealing channel ISI and jitter.",
-      diagramUrl: dUrl("lab4_fig8.png"),
-      figureLabel: "Figure 8: Eye Diagram Generation Block Diagram",
+        "Clock the Sequence Generator with the variable frequency VCO and trigger the scope using SYNC to EXT. Observe the eye diagram on CH2 as bit rate or channel bandwidth varies.",
+      diagramUrl: dUrl("lab4_fig10.png"),
+      figureLabel: "Figure 10: Variable Bit Rate & Eye Diagram Block Diagram",
       wires: [
-        { fromPortId: "ms.2k_dig", toPortId: "seq.clk", color: autoColor(0) },
+        { fromPortId: "vco.digital", toPortId: "seq.clk", color: autoColor(0) },
         { fromPortId: "seq.line_code", toPortId: "tlpf.in", color: autoColor(1) },
-        { fromPortId: "tlpf.out", toPortId: "scope.ch1", color: autoColor(2) },
+        { fromPortId: "tlpf.out", toPortId: "scope.ch2", color: autoColor(2) },
         { fromPortId: "seq.sync", toPortId: "scope.ext_trig", color: autoColor(3) },
       ],
       scopeSettings: {
@@ -370,6 +363,7 @@ const lab4: LabExperiment = {
       },
       params: {
         tuneable_lpf: { fc: 2000, gain: 1.0 },
+        vco: { freq: 4000, gain: 1.0 },
         sequence_generator: { lineCode: "NRZ-L" },
       },
     },
