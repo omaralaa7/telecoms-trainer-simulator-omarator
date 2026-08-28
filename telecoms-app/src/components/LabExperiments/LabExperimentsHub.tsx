@@ -5,7 +5,7 @@ import type { LabExperiment, LabPart } from "../../types";
 
 /**
  * LabExperimentsHub — Dropdown trigger + slide-out Lab Guide Panel
- * with in-card high-res block diagrams extracted directly from EMONA manuals.
+ * with in-card high-res block diagrams and interactive lightbox zoom modal.
  */
 export default function LabExperimentsHub() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -15,6 +15,7 @@ export default function LabExperimentsHub() {
   const [guideActive, setGuideActive] = useState(false);
   const [guidePartId, setGuidePartId] = useState<string | null>(null);
   const [zoomedDiagram, setZoomedDiagram] = useState<{ url: string; label: string } | null>(null);
+  const [zoomScale, setZoomScale] = useState(1.0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadPreset = usePatchStore((s) => s.loadPreset);
@@ -34,6 +35,22 @@ export default function LabExperimentsHub() {
     if (dropdownOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [dropdownOpen]);
+
+  // Escape key closes modal or panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (zoomedDiagram) {
+          setZoomedDiagram(null);
+          setZoomScale(1.0);
+        } else if (panelOpen) {
+          setPanelOpen(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zoomedDiagram, panelOpen]);
 
   // Guide mode: highlight next wire pair
   useEffect(() => {
@@ -128,6 +145,11 @@ export default function LabExperimentsHub() {
     clearGuide();
   }, [clearGuide]);
 
+  const openDiagramZoom = (url: string, label: string) => {
+    setZoomedDiagram({ url, label });
+    setZoomScale(1.0);
+  };
+
   return (
     <>
       {/* ─── Dropdown Trigger ─────────────────────── */}
@@ -179,13 +201,13 @@ export default function LabExperimentsHub() {
         <>
           <div className="lab-panel-backdrop" onClick={handleClosePanel} />
           <div className="lab-guide-panel">
-            {/* Panel Header */}
+            {/* Sticky Panel Header with always-visible Close Button */}
             <div className="lab-panel-header">
               <div className="lab-panel-title-group">
                 <span className="lab-panel-badge">Lab {selectedLab.labNumber}</span>
                 <h2 className="lab-panel-title">{selectedLab.title}</h2>
               </div>
-              <button className="lab-panel-close" onClick={handleClosePanel} title="Close lab panel">
+              <button className="lab-panel-close" onClick={handleClosePanel} title="Close lab panel (Esc)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -220,8 +242,8 @@ export default function LabExperimentsHub() {
                     {part.diagramUrl && (
                       <div
                         className="lab-part-diagram-container"
-                        onClick={() => setZoomedDiagram({ url: part.diagramUrl!, label: part.figureLabel || part.title })}
-                        title="Click to expand diagram"
+                        onClick={() => openDiagramZoom(part.diagramUrl!, part.figureLabel || part.title)}
+                        title="Click to expand diagram in fullscreen"
                       >
                         <img
                           src={part.diagramUrl}
@@ -231,7 +253,7 @@ export default function LabExperimentsHub() {
                         />
                         <div className="lab-part-diagram-badge">
                           <span>{part.figureLabel || "Block Diagram"}</span>
-                          <span className="zoom-icon">🔍</span>
+                          <span className="zoom-icon">🔍 Click to Expand</span>
                         </div>
                       </div>
                     )}
@@ -309,21 +331,65 @@ export default function LabExperimentsHub() {
         </>
       )}
 
-      {/* ─── Fullscreen Zoom Modal for Block Diagrams ─── */}
+      {/* ─── Interactive Lightbox Modal for Block Diagrams ─── */}
       {zoomedDiagram && (
         <div className="lab-diagram-modal-backdrop" onClick={() => setZoomedDiagram(null)}>
           <div className="lab-diagram-modal-card" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header with Close Button on Top Left & Zoom Controls */}
             <div className="lab-diagram-modal-header">
-              <span className="lab-diagram-modal-title">{zoomedDiagram.label}</span>
-              <button className="lab-panel-close" onClick={() => setZoomedDiagram(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
+              <div className="lab-diagram-modal-left">
+                <button
+                  className="lab-diagram-modal-close-btn"
+                  onClick={() => setZoomedDiagram(null)}
+                  title="Close diagram (Esc)"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span>CLOSE</span>
+                </button>
+                <span className="lab-diagram-modal-title">{zoomedDiagram.label}</span>
+              </div>
+
+              <div className="lab-diagram-zoom-controls">
+                <button
+                  className="lab-zoom-btn"
+                  onClick={() => setZoomScale((s) => Math.max(0.6, s - 0.2))}
+                  title="Zoom out"
+                >
+                  −
+                </button>
+                <button
+                  className="lab-zoom-btn"
+                  onClick={() => setZoomScale(1.0)}
+                  title="Reset zoom"
+                >
+                  {Math.round(zoomScale * 100)}%
+                </button>
+                <button
+                  className="lab-zoom-btn"
+                  onClick={() => setZoomScale((s) => Math.min(2.5, s + 0.2))}
+                  title="Zoom in"
+                >
+                  +
+                </button>
+              </div>
             </div>
+
+            {/* Modal Image Body with scalable container */}
             <div className="lab-diagram-modal-body">
-              <img src={zoomedDiagram.url} alt={zoomedDiagram.label} className="lab-diagram-modal-img" />
+              <div className="lab-diagram-modal-viewport">
+                <img
+                  src={zoomedDiagram.url}
+                  alt={zoomedDiagram.label}
+                  className="lab-diagram-modal-img"
+                  style={{
+                    transform: `scale(${zoomScale})`,
+                    transition: "transform 0.15s ease-out",
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
