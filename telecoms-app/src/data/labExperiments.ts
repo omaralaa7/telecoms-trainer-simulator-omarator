@@ -188,9 +188,9 @@ const lab2: LabExperiment = {
       id: "lab2_c",
       title: "Part C: Encoding AC Sinewave",
       description:
-        "Feed a continuous 2 kHz sine wave into the PCM Encoder. Observe how the serial PCM bit pattern changes dynamically as the analog signal varies across each quantized sampling interval.",
+        "Feed a continuous 2 kHz sine wave into the PCM Encoder. Observe how the serial PCM bit pattern changes dynamically as the analog signal varies across each quantized sampling interval.\n\n💡 Note: The EMONA Lab 2 manual demonstrates AC sine encoding using a board wiring layout; this conceptual block diagram is referenced from Lab 3 to clearly illustrate continuous analog-to-PCM bitstream conversion.",
       diagramUrl: dUrl("lab2_fig4.png"),
-      figureLabel: "Figure 4: AC Sinewave PCM Encoding Block Diagram",
+      figureLabel: "Figure 4: AC Sinewave PCM Encoding Block Diagram (Referenced from Lab 3)",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
