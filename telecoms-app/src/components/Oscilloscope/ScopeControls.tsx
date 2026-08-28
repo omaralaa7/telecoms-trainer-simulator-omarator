@@ -120,11 +120,22 @@ export default function ScopeControls() {
         <button
           className={`scope-action-btn ${scopeSettings.running ? "scope-btn-stop" : "scope-btn-run"}`}
           onClick={() => setScopeSettings({ running: !scopeSettings.running })}>
-          {scopeSettings.running ? "STOP" : "RUN"}
+          {scopeSettings.running ? (
+            <>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg>
+              <span>STOP</span>
+            </>
+          ) : (
+            <>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>RUN</span>
+            </>
+          )}
         </button>
         <button className="scope-action-btn scope-btn-single"
           onClick={() => { setScopeSettings({ running: true }); setTimeout(() => setScopeSettings({ running: false }), 50); }}>
-          SINGLE
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16h5v-8h8v8h5"/></svg>
+          <span>SINGLE</span>
         </button>
       </div>
     </div>

@@ -114,17 +114,33 @@ export default function ScopeCanvas({ width, height }: ScopeCanvasProps) {
     drawChannelArrow(ctx, ch1YOffset * divH, CH1_COLOR, "1", height);
     drawChannelArrow(ctx, ch2YOffset * divH, CH2_COLOR, "2", height);
 
-    // ─── Trigger level line ───
+    // ─── Trigger level marker (Right Edge T Indicator) ───
     if (triggerSource !== "none") {
       const trigY = height / 2 - (triggerLevel * height) / 2;
-      ctx.strokeStyle = TRIGGER_COLOR;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      
+      // Subtle dashed horizontal guide
+      ctx.strokeStyle = "rgba(241, 196, 15, 0.2)";
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([2, 5]);
       ctx.beginPath();
       ctx.moveTo(0, trigY);
       ctx.lineTo(width, trigY);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // Right edge 'T' pointer marker
+      ctx.fillStyle = TRIGGER_COLOR;
+      ctx.beginPath();
+      ctx.moveTo(width, trigY);
+      ctx.lineTo(width - 8, trigY - 4);
+      ctx.lineTo(width - 8, trigY + 4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.font = "bold 7px 'JetBrains Mono', monospace";
+      ctx.fillStyle = TRIGGER_COLOR;
+      ctx.textAlign = "right";
+      ctx.fillText("T", width - 10, trigY + 2.5);
     }
 
     // ─── Channel labels ───
