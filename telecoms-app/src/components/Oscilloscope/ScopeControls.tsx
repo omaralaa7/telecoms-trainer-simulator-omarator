@@ -128,29 +128,43 @@ export default function ScopeControls() {
         </div>
       </div>
 
-      {/* Row 5: Single Intuitive RUN / FREEZE Toggle */}
+      {/* Row 5: 2 Buttons — [RUN/STOP Toggle] and [SINGLE] */}
       <div className="scope-controls-row scope-btn-row">
         <button
-          className={`scope-toggle-btn ${scopeSettings.running ? "scope-toggle-running" : "scope-toggle-frozen"}`}
+          className={`scope-action-btn ${scopeSettings.running ? "scope-btn-running" : "scope-btn-stopped"}`}
           onClick={() => setScopeSettings({ running: !scopeSettings.running })}
-          title={scopeSettings.running ? "Click to freeze / pause waveform" : "Click to resume live sweep"}
+          title={scopeSettings.running ? "Click to stop / freeze waveform" : "Click to resume live sweep"}
         >
           {scopeSettings.running ? (
             <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              <span>RUNNING (LIVE)</span>
+              <span>RUN</span>
             </>
           ) : (
             <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="5" y="4" width="4.5" height="16" rx="1" />
                 <rect x="14.5" y="4" width="4.5" height="16" rx="1" />
               </svg>
-              <span>FROZEN (PAUSED)</span>
+              <span>STOP</span>
             </>
           )}
+        </button>
+
+        <button
+          className="scope-action-btn scope-btn-single"
+          onClick={() => {
+            setScopeSettings({ running: true });
+            setTimeout(() => setScopeSettings({ running: false }), 50);
+          }}
+          title="Capture single waveform sweep"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 16h5v-8h8v8h5" />
+          </svg>
+          <span>SINGLE</span>
         </button>
       </div>
     </div>
