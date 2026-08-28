@@ -13,15 +13,22 @@ export default function WireOverlay({ mousePos }: WireOverlayProps) {
   return (
     <g className="wire-overlay">
       {/* Existing wires */}
-      {wires.map((wire) => {
+      {wires.map((wire, index) => {
         const from = getPortPos(wire.fromPortId);
         const to = getPortPos(wire.toPortId);
         if (!from || !to) return null;
 
         const dx = Math.abs(from.x - to.x);
         const dy = Math.abs(from.y - to.y);
-        const droop = Math.max(20, dx * 0.15 + dy * 0.08);
-        const midX = (from.x + to.x) / 2;
+
+        // Per-wire offset so overlapping paths separate visually
+        const baseDroop = Math.max(20, dx * 0.15 + dy * 0.08);
+        const droopOffset = (index % 5) * 10;  // 0, 10, 20, 30, 40px stagger
+        const droop = baseDroop + droopOffset;
+
+        // Slight horizontal jitter to the control point
+        const jitter = ((index % 3) - 1) * 15;  // -15, 0, +15px
+        const midX = (from.x + to.x) / 2 + jitter;
         const midY = Math.max(from.y, to.y) + droop;
         const d = `M ${from.x} ${from.y} Q ${midX} ${midY} ${to.x} ${to.y}`;
 

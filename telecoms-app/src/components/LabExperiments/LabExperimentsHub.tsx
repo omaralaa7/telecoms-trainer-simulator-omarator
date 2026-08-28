@@ -152,7 +152,15 @@ export default function LabExperimentsHub() {
         {/* ─── Dropdown Menu ─────────────────────── */}
         {dropdownOpen && (
           <div className="lab-dropdown-menu">
-            <div className="lab-dropdown-header">LAB EXPERIMENTS</div>
+            <div className="lab-dropdown-header">
+              <span>LAB EXPERIMENTS</span>
+              <button className="lab-dropdown-close" onClick={() => setDropdownOpen(false)} title="Close">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
             {LAB_EXPERIMENTS.map((lab) => (
               <button
                 key={lab.id}
