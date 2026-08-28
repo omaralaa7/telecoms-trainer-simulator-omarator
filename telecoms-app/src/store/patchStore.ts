@@ -105,12 +105,14 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
       toPortId: dst,
       color: state.selectedWireColor,
     };
+    const nextWires = [...state.wires, wire];
     set({
-      wires: [...state.wires, wire],
+      wires: nextWires,
       wiringFrom: null,
       undoStack: [...state.undoStack, { type: "add", wire }],
       redoStack: [],
     });
+    audioEngine.connectWires(nextWires);
   },
 
   cancelWire: () => set({ wiringFrom: null }),
@@ -119,11 +121,13 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
     const state = get();
     const wire = state.wires.find((w) => w.id === wireId);
     if (!wire) return;
+    const nextWires = state.wires.filter((w) => w.id !== wireId);
     set({
-      wires: state.wires.filter((w) => w.id !== wireId),
+      wires: nextWires,
       undoStack: [...state.undoStack, { type: "remove", wire }],
       redoStack: [],
     });
+    audioEngine.connectWires(nextWires);
   },
 
   // ─── Undo ───────────────────────────────────────────────────────
@@ -135,30 +139,36 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
     const newUndoStack = state.undoStack.slice(0, -1);
 
     switch (action.type) {
-      case "add":
-        // Undo an add → remove the wire
+      case "add": {
+        const nextWires = state.wires.filter((w) => w.id !== action.wire.id);
         set({
-          wires: state.wires.filter((w) => w.id !== action.wire.id),
+          wires: nextWires,
           undoStack: newUndoStack,
           redoStack: [...state.redoStack, action],
         });
+        audioEngine.connectWires(nextWires);
         break;
-      case "remove":
-        // Undo a remove → re-add the wire
+      }
+      case "remove": {
+        const nextWires = [...state.wires, action.wire];
         set({
-          wires: [...state.wires, action.wire],
+          wires: nextWires,
           undoStack: newUndoStack,
           redoStack: [...state.redoStack, action],
         });
+        audioEngine.connectWires(nextWires);
         break;
-      case "reset":
-        // Undo a reset → restore previous wires
+      }
+      case "reset": {
+        const nextWires = action.previousWires;
         set({
-          wires: action.previousWires,
+          wires: nextWires,
           undoStack: newUndoStack,
           redoStack: [...state.redoStack, { type: "reset", previousWires: state.wires }],
         });
+        audioEngine.connectWires(nextWires);
         break;
+      }
     }
   },
 
@@ -171,30 +181,36 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
     const newRedoStack = state.redoStack.slice(0, -1);
 
     switch (action.type) {
-      case "add":
-        // Redo an add → re-add the wire
+      case "add": {
+        const nextWires = [...state.wires, action.wire];
         set({
-          wires: [...state.wires, action.wire],
+          wires: nextWires,
           undoStack: [...state.undoStack, action],
           redoStack: newRedoStack,
         });
+        audioEngine.connectWires(nextWires);
         break;
-      case "remove":
-        // Redo a remove → remove the wire again
+      }
+      case "remove": {
+        const nextWires = state.wires.filter((w) => w.id !== action.wire.id);
         set({
-          wires: state.wires.filter((w) => w.id !== action.wire.id),
+          wires: nextWires,
           undoStack: [...state.undoStack, action],
           redoStack: newRedoStack,
         });
+        audioEngine.connectWires(nextWires);
         break;
-      case "reset":
-        // Redo a reset → clear wires again
+      }
+      case "reset": {
+        const nextWires = action.previousWires;
         set({
-          wires: action.previousWires,
+          wires: nextWires,
           undoStack: [...state.undoStack, { type: "reset", previousWires: state.wires }],
           redoStack: newRedoStack,
         });
+        audioEngine.connectWires(nextWires);
         break;
+      }
     }
   },
 
@@ -219,31 +235,30 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
     set((s) => ({ scopeSettings: { ...s.scopeSettings, ...settings } })),
 
   resetPatch: () => {
-    const state = get();
-    if (state.wires.length === 0) return;
+    const previousWires = get().wires;
     set({
       wires: [],
       wiringFrom: null,
-      undoStack: [...state.undoStack, { type: "reset", previousWires: [...state.wires] }],
+      undoStack: [...get().undoStack, { type: "reset", previousWires }],
       redoStack: [],
+      guideHighlights: [],
+      guideStep: 0,
     });
+    audioEngine.connectWires([]);
   },
 
   getPortPos: (portId) => {
-    const p = get().ports.get(portId);
-    return p ? { x: p.x, y: p.y } : null;
+    const port = get().ports.get(portId);
+    return port ? { x: port.x, y: port.y } : null;
   },
 
   // ─── Load Lab Preset ───────────────────────────────────────────
   loadPreset: (presetWires, params, scopeSettings) => {
     const state = get();
 
-    // Save current state for undo
-    const undoAction: WireAction = { type: "reset", previousWires: [...state.wires] };
-
     // Build Wire objects from preset
     const newWires: Wire[] = presetWires.map((pw, i) => ({
-      id: `wire_${wireCounter++}`,
+      id: `wire_preset_${Date.now()}_${i}`,
       fromPortId: pw.fromPortId,
       toPortId: pw.toPortId,
       color: pw.color,
@@ -252,13 +267,14 @@ export const usePatchStore = create<PatchStore>((set, get) => ({
     const updates: Partial<PatchStore> = {
       wires: newWires,
       wiringFrom: null,
-      undoStack: [...state.undoStack, undoAction],
+      undoStack: [...state.undoStack, { type: "reset", previousWires: [...state.wires] }],
       redoStack: [],
       guideHighlights: [],
       guideStep: 0,
     };
 
     set(updates as any);
+    audioEngine.connectWires(newWires);
 
     // Apply params if provided
     if (params) {

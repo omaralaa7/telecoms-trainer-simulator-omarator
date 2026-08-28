@@ -1,29 +1,275 @@
 import type { Wire } from "../types";
 
 /**
- * AudioEngine — Full Real-Time DSP Signal Processing Engine
+ * TELECOMS_DSP_WORKLET_CODE
  *
- * Implements genuine physical DSP processing and dynamic signal routing for:
- * - Master Signals oscillators (Sine, Cosine, Digital Clocks)
- * - Variable DCV (Adjustable DC voltage source)
- * - Dual Analog Switch (Natural PAM sampling & Sample-and-Hold)
- * - Tuneable LPF (4th/8th-order cascaded active low-pass reconstruction filter)
- * - PCM Encoder & Decoder (8-bit quantization, Frame Sync serializer & DAC)
- * - Sequence Generator (PRBS with NRZ-L, Bi-Phase, RZ-AMI, NRZ-M + SYNC)
- * - Utilities (Threshold Comparator, Half-wave Rectifier, RC Low-Pass Filter)
- * - VCO (Voltage Controlled Oscillator with adjustable frequency)
- * - Buffer & Adder blocks
- * - Dual-Trace Oscilloscope CH1/CH2 Analysers
+ * Inlined AudioWorklet source string loaded via Blob URL to guarantee
+ * 100% reliability with zero 404 errors on GitHub Pages or any hosting.
+ */
+const TELECOMS_DSP_WORKLET_CODE = `
+// ─── 1. DUAL ANALOG SWITCH & SAMPLE-AND-HOLD ────────────────────────
+class DualAnalogSwitchProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.heldSample = 0;
+    this.prevShClock = 0;
+  }
+
+  process(inputs, outputs) {
+    const in1 = inputs[0]?.[0];
+    const ctrl1 = inputs[1]?.[0];
+    const in2 = inputs[2]?.[0];
+    const ctrl2 = inputs[3]?.[0];
+    const sh_in = inputs[4]?.[0];
+
+    const out = outputs[0]?.[0];
+    const sh_out = outputs[1]?.[0];
+
+    const blockSize = 128;
+
+    for (let i = 0; i < blockSize; i++) {
+      // Switch 1: closed when ctrl1 is HIGH (>0.1)
+      const g1 = (ctrl1 && ctrl1[i] > 0.1) ? 1.0 : 0.0;
+      const s1 = in1 ? in1[i] * g1 : 0.0;
+
+      // Switch 2: closed when ctrl2 is HIGH (>0.1)
+      const g2 = (ctrl2 && ctrl2[i] > 0.1) ? 1.0 : 0.0;
+      const s2 = in2 ? in2[i] * g2 : 0.0;
+
+      if (out) {
+        out[i] = s1 + s2;
+      }
+
+      // Sample & Hold: latches analog voltage on clock rising edge
+      const clk = (ctrl1 && ctrl1[i] !== undefined) ? ctrl1[i] : ((ctrl2 && ctrl2[i] !== undefined) ? ctrl2[i] : 0.0);
+      if (clk > 0.2 && this.prevShClock <= 0.2) {
+        this.heldSample = sh_in ? sh_in[i] : 0.0;
+      }
+      this.prevShClock = clk;
+
+      if (sh_out) {
+        sh_out[i] = this.heldSample;
+      }
+    }
+
+    return true;
+  }
+}
+registerProcessor("dual-analog-switch-processor", DualAnalogSwitchProcessor);
+
+// ─── 2. PCM CODEC (ENCODER & DECODER) ───────────────────────────────
+class PCMCodecProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.encByte = 128;
+    this.encBitIndex = 0;
+    this.prevEncClk = 0;
+    this.prevEncFs = 0;
+
+    this.decShiftReg = 128;
+    this.decBitIndex = 0;
+    this.decHoldingByte = 128;
+    this.prevDecClk = 0;
+    this.prevDecFs = 0;
+    this.isTdm = false;
+
+    this.port.onmessage = (e) => {
+      if (e.data?.type === "SET_MODE") {
+        this.isTdm = e.data.value === "TDM";
+      }
+    };
+  }
+
+  process(inputs, outputs) {
+    const clkE = inputs[0]?.[0];
+    const fsE = inputs[1]?.[0];
+    const in1E = inputs[2]?.[0];
+    const in2E = inputs[3]?.[0];
+
+    const clkD = inputs[4]?.[0];
+    const fsD = inputs[5]?.[0];
+    const dataD = inputs[6]?.[0];
+
+    const pcmDataOut = outputs[0]?.[0];
+    const decOut = outputs[1]?.[0];
+    const decOut2 = outputs[2]?.[0];
+
+    const blockSize = 128;
+
+    for (let i = 0; i < blockSize; i++) {
+      // ── ENCODER ──
+      const fsSampE = fsE ? fsE[i] : 0.0;
+      const clkSampE = clkE ? clkE[i] : 0.0;
+
+      if (fsSampE > 0.2 && this.prevEncFs <= 0.2) {
+        const analogVolts = in1E ? in1E[i] : 0.0;
+        const norm = Math.max(-1.0, Math.min(1.0, analogVolts));
+        this.encByte = Math.round(((norm + 1.0) / 2.0) * 255);
+        this.encBitIndex = 0;
+      }
+      this.prevEncFs = fsSampE;
+
+      if (clkSampE > 0.2 && this.prevEncClk <= 0.2) {
+        this.encBitIndex = (this.encBitIndex + 1) % 8;
+      }
+      this.prevEncClk = clkSampE;
+
+      const bit = (this.encByte >> (7 - this.encBitIndex)) & 1;
+      if (pcmDataOut) {
+        pcmDataOut[i] = bit ? 1.0 : -1.0;
+      }
+
+      // ── DECODER ──
+      const fsSampD = fsD ? fsD[i] : 0.0;
+      const clkSampD = clkD ? clkD[i] : 0.0;
+      const bitIn = dataD ? dataD[i] : 0.0;
+
+      if (fsSampD > 0.2 && this.prevDecFs <= 0.2) {
+        this.decHoldingByte = this.decShiftReg;
+        this.decShiftReg = 0;
+        this.decBitIndex = 0;
+      }
+      this.prevDecFs = fsSampD;
+
+      if (clkSampD > 0.2 && this.prevDecClk <= 0.2) {
+        const bitVal = bitIn > 0.0 ? 1 : 0;
+        this.decShiftReg = ((this.decShiftReg << 1) | bitVal) & 0xFF;
+        this.decBitIndex++;
+      }
+      this.prevDecClk = clkSampD;
+
+      const dacVolts = ((this.decHoldingByte / 255.0) * 2.0) - 1.0;
+      if (decOut) {
+        decOut[i] = dacVolts;
+      }
+      if (decOut2) {
+        decOut2[i] = dacVolts;
+      }
+    }
+
+    return true;
+  }
+}
+registerProcessor("pcm-codec-processor", PCMCodecProcessor);
+
+// ─── 3. UTILITIES COMPARATOR ─────────────────────────────────────────
+class UtilitiesComparatorProcessor extends AudioWorkletProcessor {
+  process(inputs, outputs) {
+    const inSig = inputs[0]?.[0];
+    const refSig = inputs[1]?.[0];
+    const out = outputs[0]?.[0];
+
+    if (!out) return true;
+
+    for (let i = 0; i < 128; i++) {
+      const vIn = inSig ? inSig[i] : 0.0;
+      const vRef = refSig ? refSig[i] : 0.0;
+      out[i] = vIn > vRef ? 1.0 : -1.0;
+    }
+
+    return true;
+  }
+}
+registerProcessor("utilities-comparator-processor", UtilitiesComparatorProcessor);
+
+// ─── 4. SEQUENCE GENERATOR (PRBS) ───────────────────────────────────
+const PRBS_PATTERN = [1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1];
+
+class TelecomsSeqGenProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.pattern = [...PRBS_PATTERN];
+    this.bitIndex = 0;
+    this.lineCode = 0;
+    this.prevClk = 0;
+    this.sampleInBit = 0;
+    this.samplesPerBit = 24;
+    this.amiPolarity = 1;
+    this.nrzmState = -1;
+
+    this.port.onmessage = (event) => {
+      const { type, value } = event.data;
+      if (type === "SET_LINE_CODE") {
+        this.lineCode = value;
+      }
+    };
+  }
+
+  process(inputs, outputs) {
+    const clkInput = inputs[0]?.[0];
+    const dataOut = outputs[0]?.[0];
+    const syncOut = outputs[1]?.[0];
+
+    if (!dataOut) return true;
+
+    for (let i = 0; i < 128; i++) {
+      let clkSample = clkInput ? clkInput[i] : 0;
+      const risingEdge = clkSample > 0.3 && this.prevClk <= 0.3;
+      this.prevClk = clkSample;
+
+      if (risingEdge) {
+        this.bitIndex = (this.bitIndex + 1) % this.pattern.length;
+        this.sampleInBit = 0;
+      }
+
+      this.sampleInBit++;
+      const currentBit = this.pattern[this.bitIndex];
+
+      let sample = 0;
+      switch (this.lineCode) {
+        case 0:
+          sample = currentBit === 1 ? 1.0 : -1.0;
+          break;
+        case 1:
+          {
+            const halfBit = this.samplesPerBit / 2;
+            sample = (currentBit === 1)
+              ? (this.sampleInBit <= halfBit ? 1.0 : -1.0)
+              : (this.sampleInBit <= halfBit ? -1.0 : 1.0);
+          }
+          break;
+        case 2:
+          if (currentBit === 1) {
+            const halfBit = this.samplesPerBit / 2;
+            sample = this.sampleInBit <= halfBit ? this.amiPolarity : 0.0;
+            if (risingEdge) this.amiPolarity *= -1;
+          } else {
+            sample = 0.0;
+          }
+          break;
+        case 3:
+          if (risingEdge && currentBit === 1) {
+            this.nrzmState *= -1;
+          }
+          sample = this.nrzmState;
+          break;
+        default:
+          sample = currentBit === 1 ? 1.0 : -1.0;
+      }
+
+      dataOut[i] = sample;
+      if (syncOut) {
+        syncOut[i] = this.bitIndex === 0 ? 1.0 : -1.0;
+      }
+    }
+
+    return true;
+  }
+}
+registerProcessor("telecoms-seqgen-processor", TelecomsSeqGenProcessor);
+`;
+
+/**
+ * AudioEngine — Real-Time DSP Signal Processing Engine
  */
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private isInitialized = false;
+  private isInitializing = false;
 
-  // Audio nodes keyed by port ID (e.g. "ms.2k_sine", "das.out", "scope.ch1")
   private outputNodes: Map<string, AudioNode> = new Map();
   private inputNodes: Map<string, AudioNode> = new Map();
 
-  // Reference to worklets and audio nodes for parameter updates
   private pcmWorklet: AudioWorkletNode | null = null;
   private seqWorklet: AudioWorkletNode | null = null;
   private tlpfFilters: BiquadFilterNode[] = [];
@@ -34,39 +280,49 @@ export class AudioEngine {
   private vcoGainNode: GainNode | null = null;
   private bufferGainNode: GainNode | null = null;
 
-  // Scope analysers
   private ch1Analyser: AnalyserNode | null = null;
   private ch2Analyser: AnalyserNode | null = null;
   private extTrigAnalyser: AnalyserNode | null = null;
 
-  // Active connections for dynamic rewiring
   private activeConnections: Array<{ from: AudioNode; to: AudioNode }> = [];
-
-  // Oscillators for cleanup
   private oscillators: OscillatorNode[] = [];
+  private pendingWires: Wire[] = [];
 
   async init(): Promise<void> {
-    if (this.isInitialized) return;
-    this.ctx = new AudioContext({ sampleRate: 48000 });
+    if (this.isInitialized || this.isInitializing) return;
+    this.isInitializing = true;
 
     try {
-      await this.ctx.audioWorklet.addModule("/worklets/telecoms-dsp.worklet.js");
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      this.ctx = new AudioCtx({ sampleRate: 48000 });
+
+      // Load Worklet from inline Blob URL to guarantee 0% 404 network failure
+      const blob = new Blob([TELECOMS_DSP_WORKLET_CODE], { type: "application/javascript" });
+      const blobUrl = URL.createObjectURL(blob);
+      await this.ctx.audioWorklet.addModule(blobUrl);
+      URL.revokeObjectURL(blobUrl);
+
+      this.buildMasterSignals();
+      this.buildVariableDCV();
+      this.buildDualAnalogSwitch();
+      this.buildTuneableLPF();
+      this.buildPCMCodec();
+      this.buildSequenceGenerator();
+      this.buildUtilities();
+      this.buildVCO();
+      this.buildBufferAndAdders();
+      this.buildScopeAnalysers();
+
+      this.isInitialized = true;
+
+      if (this.pendingWires.length > 0) {
+        this.connectWires(this.pendingWires);
+      }
     } catch (e) {
-      console.warn("AudioWorklet module load warning:", e);
+      console.error("AudioEngine initialization failed:", e);
+    } finally {
+      this.isInitializing = false;
     }
-
-    this.buildMasterSignals();
-    this.buildVariableDCV();
-    this.buildDualAnalogSwitch();
-    this.buildTuneableLPF();
-    this.buildPCMCodec();
-    this.buildSequenceGenerator();
-    this.buildUtilities();
-    this.buildVCO();
-    this.buildBufferAndAdders();
-    this.buildScopeAnalysers();
-
-    this.isInitialized = true;
   }
 
   getContext(): AudioContext | null {
@@ -78,6 +334,9 @@ export class AudioEngine {
   }
 
   async resume(): Promise<void> {
+    if (!this.isInitialized) {
+      await this.init();
+    }
     if (this.ctx && this.ctx.state === "suspended") {
       await this.ctx.resume();
     }
@@ -125,19 +384,16 @@ export class AudioEngine {
     constSrc.offset.value = 1.0;
     constSrc.start();
 
-    // +5V output (normalized to 1.0V audio range)
     const p5vGain = this.ctx.createGain();
     p5vGain.gain.value = 1.0;
     constSrc.connect(p5vGain);
     this.outputNodes.set("vdcv.p5v", p5vGain);
 
-    // Variable VDC output
     this.vdcGainNode = this.ctx.createGain();
     this.vdcGainNode.gain.value = 0.0;
     constSrc.connect(this.vdcGainNode);
     this.outputNodes.set("vdcv.vdc", this.vdcGainNode);
 
-    // GND output
     const gndGain = this.ctx.createGain();
     gndGain.gain.value = 0.0;
     constSrc.connect(gndGain);
@@ -155,7 +411,6 @@ export class AudioEngine {
         outputChannelCount: [1, 1],
       });
 
-      // Inputs: 0: in1, 1: ctrl1, 2: in2, 3: ctrl2, 4: sh_in
       const in1Gain = this.ctx.createGain(); in1Gain.connect(dasNode, 0, 0);
       const ctrl1Gain = this.ctx.createGain(); ctrl1Gain.connect(dasNode, 0, 1);
       const in2Gain = this.ctx.createGain(); in2Gain.connect(dasNode, 0, 2);
@@ -168,7 +423,6 @@ export class AudioEngine {
       this.inputNodes.set("das.ctrl2", ctrl2Gain);
       this.inputNodes.set("das.sh_in", shInGain);
 
-      // Outputs: 0: out, 1: sh_out
       const outGain = this.ctx.createGain();
       const shOutGain = this.ctx.createGain();
 
@@ -178,7 +432,7 @@ export class AudioEngine {
       this.outputNodes.set("das.out", outGain);
       this.outputNodes.set("das.sh_out", shOutGain);
     } catch (e) {
-      console.warn("DAS worklet initialization fallback:", e);
+      console.error("DAS worklet build failed:", e);
     }
   }
 
@@ -187,7 +441,7 @@ export class AudioEngine {
     if (!this.ctx) return;
 
     this.tlpfFilters = [];
-    const NUM_STAGES = 4; // 8th-order cascade
+    const NUM_STAGES = 4;
 
     for (let i = 0; i < NUM_STAGES; i++) {
       const filter = this.ctx.createBiquadFilter();
@@ -204,7 +458,7 @@ export class AudioEngine {
     const inputGain = this.ctx.createGain();
     inputGain.connect(this.tlpfFilters[0]);
     this.inputNodes.set("tlpf.in", inputGain);
-    this.inputNodes.set("tlpf.fc_clk", this.ctx.createGain()); // Clock port placeholder
+    this.inputNodes.set("tlpf.fc_clk", this.ctx.createGain());
 
     this.tlpfGainNode = this.ctx.createGain();
     this.tlpfGainNode.gain.value = 1.0;
@@ -213,7 +467,7 @@ export class AudioEngine {
     this.outputNodes.set("tlpf.out", this.tlpfGainNode);
   }
 
-  // ─── 5. PCM Codec (Encoder & Decoder) ────────────────────────────
+  // ─── 5. PCM Codec ────────────────────────────────────────────────
   private buildPCMCodec(): void {
     if (!this.ctx) return;
 
@@ -224,7 +478,6 @@ export class AudioEngine {
         outputChannelCount: [1, 1, 1],
       });
 
-      // Encoder inputs: 0: clk, 1: fs, 2: in1, 3: in2
       const clkEGain = this.ctx.createGain(); clkEGain.connect(this.pcmWorklet, 0, 0);
       const fsEGain = this.ctx.createGain(); fsEGain.connect(this.pcmWorklet, 0, 1);
       const in1EGain = this.ctx.createGain(); in1EGain.connect(this.pcmWorklet, 0, 2);
@@ -235,7 +488,6 @@ export class AudioEngine {
       this.inputNodes.set("pcme.in1", in1EGain);
       this.inputNodes.set("pcme.in2", in2EGain);
 
-      // Decoder inputs: 4: clk, 5: fs, 6: pcm_data
       const clkDGain = this.ctx.createGain(); clkDGain.connect(this.pcmWorklet, 0, 4);
       const fsDGain = this.ctx.createGain(); fsDGain.connect(this.pcmWorklet, 0, 5);
       const dataDGain = this.ctx.createGain(); dataDGain.connect(this.pcmWorklet, 0, 6);
@@ -244,7 +496,6 @@ export class AudioEngine {
       this.inputNodes.set("pcmd.fs", fsDGain);
       this.inputNodes.set("pcmd.pcm_data", dataDGain);
 
-      // Outputs: 0: pcme.pcm_data, 1: pcmd.out, 2: pcmd.out2
       const pcmDataOut = this.ctx.createGain();
       const pcmdOut = this.ctx.createGain();
       const pcmdOut2 = this.ctx.createGain();
@@ -257,7 +508,7 @@ export class AudioEngine {
       this.outputNodes.set("pcmd.out", pcmdOut);
       this.outputNodes.set("pcmd.out2", pcmdOut2);
     } catch (e) {
-      console.warn("PCM worklet initialization fallback:", e);
+      console.error("PCM worklet build failed:", e);
     }
   }
 
@@ -272,7 +523,6 @@ export class AudioEngine {
         outputChannelCount: [1, 1],
       });
 
-      // Default internal 2kHz clock source if no external wire is connected
       const defaultClk = this.ctx.createOscillator();
       defaultClk.type = "square";
       defaultClk.frequency.value = 2000;
@@ -284,7 +534,6 @@ export class AudioEngine {
       clkGain.connect(this.seqWorklet, 0, 0);
       this.inputNodes.set("seq.clk", clkGain);
 
-      // Outputs: 0: line_code / x / y, 1: sync
       const lineCodeOut = this.ctx.createGain();
       const syncOut = this.ctx.createGain();
 
@@ -296,7 +545,7 @@ export class AudioEngine {
       this.outputNodes.set("seq.y", lineCodeOut);
       this.outputNodes.set("seq.sync", syncOut);
     } catch (e) {
-      console.warn("Sequence generator worklet fallback:", e);
+      console.error("Sequence generator build failed:", e);
     }
   }
 
@@ -304,7 +553,6 @@ export class AudioEngine {
   private buildUtilities(): void {
     if (!this.ctx) return;
 
-    // Comparator worklet
     try {
       const compWorklet = new AudioWorkletNode(this.ctx, "utilities-comparator-processor", {
         numberOfInputs: 2,
@@ -320,10 +568,10 @@ export class AudioEngine {
       this.inputNodes.set("util.comp_ref", compRefGain);
       this.outputNodes.set("util.comp_out", compOutGain);
     } catch (e) {
-      console.warn("Comparator worklet fallback:", e);
+      console.error("Comparator build failed:", e);
     }
 
-    // Half-wave Rectifier (WaveShaper max(0, x))
+    // Half-wave Rectifier
     const rectShaper = this.ctx.createWaveShaper();
     const curve = new Float32Array(512);
     for (let i = 0; i < 512; i++) {
@@ -353,7 +601,7 @@ export class AudioEngine {
     this.outputNodes.set("util.rclpf_out", rclpfOut);
   }
 
-  // ─── 8. VCO (Voltage Controlled Oscillator) ──────────────────────
+  // ─── 8. VCO ──────────────────────────────────────────────────────
   private buildVCO(): void {
     if (!this.ctx) return;
 
@@ -387,23 +635,20 @@ export class AudioEngine {
   private buildBufferAndAdders(): void {
     if (!this.ctx) return;
 
-    // Buffer Block
     this.bufferGainNode = this.ctx.createGain();
     this.bufferGainNode.gain.value = 1.0;
     this.inputNodes.set("buf.in", this.bufferGainNode);
     this.outputNodes.set("buf.out", this.bufferGainNode);
     this.outputNodes.set("buf.headphone", this.bufferGainNode);
 
-    // Adder 1
     const adderSum = this.ctx.createGain();
-    adderSum.gain.value = 0.7; // Headroom
+    adderSum.gain.value = 0.7;
     const inA = this.ctx.createGain(); inA.connect(adderSum);
     const inB = this.ctx.createGain(); inB.connect(adderSum);
     this.inputNodes.set("adder1.a", inA);
     this.inputNodes.set("adder1.b", inB);
     this.outputNodes.set("adder1.ga_gb", adderSum);
 
-    // Channel Adder (add2)
     const add2Sum = this.ctx.createGain();
     const add2Sig = this.ctx.createGain(); add2Sig.connect(add2Sum);
     const add2Noise = this.ctx.createGain(); add2Noise.connect(add2Sum);
@@ -440,9 +685,13 @@ export class AudioEngine {
 
   // ─── Dynamic Wire Routing ────────────────────────────────────────
   connectWires(wires: Wire[]): void {
-    if (!this.ctx) return;
+    this.pendingWires = wires;
+    if (!this.isInitialized || !this.ctx) {
+      this.init().then(() => this.connectWires(wires));
+      return;
+    }
 
-    // Disconnect previous active connections
+    // Disconnect previous connections
     for (const conn of this.activeConnections) {
       try {
         conn.from.disconnect(conn.to);
@@ -452,13 +701,12 @@ export class AudioEngine {
     }
     this.activeConnections = [];
 
-    // Process all wires
+    // Connect all active patch wires
     for (const wire of wires) {
       let fromNode = this.outputNodes.get(wire.fromPortId);
       let toNode = this.inputNodes.get(wire.toPortId);
 
       if (!fromNode || !toNode) {
-        // Check reverse direction
         fromNode = this.outputNodes.get(wire.toPortId);
         toNode = this.inputNodes.get(wire.fromPortId);
       }
@@ -468,7 +716,7 @@ export class AudioEngine {
           fromNode.connect(toNode);
           this.activeConnections.push({ from: fromNode, to: toNode });
         } catch (e) {
-          console.warn(`Wire connection ${wire.fromPortId} -> ${wire.toPortId} failed:`, e);
+          console.warn(`Wire ${wire.fromPortId} -> ${wire.toPortId} connect error:`, e);
         }
       }
     }
@@ -489,7 +737,6 @@ export class AudioEngine {
       }
     } else if (blockId === "variable_dcv") {
       if (key === "vdc" && this.vdcGainNode) {
-        // Map -5V..+5V to -1.0 .. +1.0 audio range
         const normalized = Number(value) / 5.0;
         this.vdcGainNode.gain.setValueAtTime(normalized, this.ctx.currentTime);
       }
@@ -551,5 +798,4 @@ export class AudioEngine {
   }
 }
 
-// Singleton export
 export const audioEngine = new AudioEngine();
