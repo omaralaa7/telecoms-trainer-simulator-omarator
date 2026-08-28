@@ -576,41 +576,46 @@ body {
   opacity: 0.7;
 }
 
-/* ─── Fullscreen Diagram Lightbox Modal ───────────────────────── */
+/* ─── Fullscreen Diagram Lightbox Modal (Portal) ─────────────────── */
 .lab-diagram-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(6px);
-  z-index: 400;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.88) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
   animation: fadeIn 0.15s ease;
 }
 
 .lab-diagram-modal-card {
-  background: #151d27;
-  border: 1px solid rgba(243, 156, 18, 0.4);
-  border-radius: var(--radius-md);
-  width: auto;
-  max-width: 92vw;
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
-  overflow: hidden;
+  position: relative !important;
+  margin: auto !important;
+  background: #141c28 !important;
+  border: 1px solid rgba(243, 156, 18, 0.5) !important;
+  border-radius: var(--radius-md) !important;
+  max-width: 90vw !important;
+  max-height: 88vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9) !important;
+  overflow: hidden !important;
 }
 
 .lab-diagram-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 16px;
-  background: #101620;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 10px 16px !important;
+  background: #0f1620 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  flex-shrink: 0 !important;
 }
 
 .lab-diagram-modal-left {
@@ -623,21 +628,21 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  background: rgba(231, 76, 60, 0.2);
-  border: 1px solid rgba(231, 76, 60, 0.4);
+  padding: 5px 12px;
+  background: rgba(231, 76, 60, 0.25);
+  border: 1px solid #e74c3c;
   border-radius: 4px;
-  color: #ff7675;
+  color: #ffffff;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .lab-diagram-modal-close-btn:hover {
   background: #e74c3c;
-  color: #ffffff;
+  box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
 }
 
 .lab-diagram-modal-title {
@@ -677,13 +682,14 @@ body {
 }
 
 .lab-diagram-modal-body {
-  padding: 16px;
-  background: #ffffff;
-  overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  max-height: calc(92vh - 60px);
+  padding: 20px !important;
+  background: #ffffff !important;
+  overflow: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important;
+  max-height: calc(88vh - 54px) !important;
 }
 
 .lab-diagram-modal-viewport {
@@ -693,12 +699,12 @@ body {
 }
 
 .lab-diagram-modal-img {
-  max-width: 85vw;
-  max-height: 75vh;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  display: block;
+  max-width: 82vw !important;
+  max-height: 70vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
 }
 
 /* ─── Lab Part Cards ─────────────────────────────────────────── */

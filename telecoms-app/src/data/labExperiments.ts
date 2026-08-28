@@ -164,7 +164,7 @@ const lab2: LabExperiment = {
       description:
         "Connect the Variable DCV output to PCM Encoder INPUT 1. Adjust the DC voltage from -2.5V to +2.5V and observe the 8-bit binary code change on CH1 from 00000000 (min) to 11111111 (max).",
       diagramUrl: dUrl("lab2_fig5.png"),
-      figureLabel: "Figure 5: DC Voltage PCM Encoding Block Diagram",
+      figureLabel: "Figure 8: Variable DC Voltage PCM Encoding Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
@@ -190,7 +190,7 @@ const lab2: LabExperiment = {
       description:
         "Feed a continuous 2 kHz sine wave into the PCM Encoder. Observe how the serial PCM bit pattern changes dynamically as the analog signal varies across each quantized sampling interval.",
       diagramUrl: dUrl("lab2_fig7.png"),
-      figureLabel: "Figure 7: AC Sinewave PCM Encoding Block Diagram",
+      figureLabel: "Figure 4: AC Sinewave PCM Encoding Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
@@ -227,7 +227,7 @@ const lab3: LabExperiment = {
       description:
         "Wire the PCM Encoder output directly into the PCM Decoder with stolen CLK and FS signals. Observe the reconstructed staircase PAM analog output on CH1 compared to the original message on CH2.",
       diagramUrl: dUrl("lab3_fig3.png"),
-      figureLabel: "Figure 3: PCM Decode Loop Block Diagram",
+      figureLabel: "Figure 6: PCM Decode Loop Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
@@ -283,7 +283,7 @@ const lab3: LabExperiment = {
       description:
         "Pass the decoded staircase PAM through the Tuneable LPF to filter out quantization harmonics. Compare the cleanly reconstructed sine wave on CH1 with the original message on CH2.",
       diagramUrl: dUrl("lab3_fig8.png"),
-      figureLabel: "Figure 8: PCM Signal Reconstruction Block Diagram",
+      figureLabel: "Figure 11: PCM Signal Reconstruction Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "pcme.clk", color: autoColor(0) },
         { fromPortId: "ms.8k_dig", toPortId: "pcme.fs", color: autoColor(1) },
@@ -327,7 +327,7 @@ const lab4: LabExperiment = {
       description:
         "Pass the Sequence Generator's NRZ-L digital sequence through the Tuneable LPF channel. Observe the distorted, rounded pulses on CH2 due to ISI and compare with the crisp digital input on CH1.",
       diagramUrl: dUrl("lab4_fig3.png"),
-      figureLabel: "Figure 3: Bandwidth-Limited Channel Block Diagram",
+      figureLabel: "Figure 8: Bandwidth-Limited Channel Block Diagram",
       wires: [
         { fromPortId: "ms.2k_dig", toPortId: "seq.clk", color: autoColor(0) },
         { fromPortId: "seq.line_code", toPortId: "tlpf.in", color: autoColor(1) },

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { usePatchStore } from "../../store/patchStore";
 import { LAB_EXPERIMENTS } from "../../data/labExperiments";
 import type { LabExperiment, LabPart } from "../../types";
@@ -331,69 +332,71 @@ export default function LabExperimentsHub() {
         </>
       )}
 
-      {/* ─── Interactive Lightbox Modal for Block Diagrams ─── */}
-      {zoomedDiagram && (
-        <div className="lab-diagram-modal-backdrop" onClick={() => setZoomedDiagram(null)}>
-          <div className="lab-diagram-modal-card" onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header with Close Button on Top Left & Zoom Controls */}
-            <div className="lab-diagram-modal-header">
-              <div className="lab-diagram-modal-left">
-                <button
-                  className="lab-diagram-modal-close-btn"
-                  onClick={() => setZoomedDiagram(null)}
-                  title="Close diagram (Esc)"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  <span>CLOSE</span>
-                </button>
-                <span className="lab-diagram-modal-title">{zoomedDiagram.label}</span>
+      {/* ─── Interactive Lightbox Modal for Block Diagrams (Rendered via Portal on document.body) ─── */}
+      {zoomedDiagram &&
+        createPortal(
+          <div className="lab-diagram-modal-backdrop" onClick={() => setZoomedDiagram(null)}>
+            <div className="lab-diagram-modal-card" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header with Close Button on Top Left & Zoom Controls */}
+              <div className="lab-diagram-modal-header">
+                <div className="lab-diagram-modal-left">
+                  <button
+                    className="lab-diagram-modal-close-btn"
+                    onClick={() => setZoomedDiagram(null)}
+                    title="Close diagram (Esc)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                    <span>CLOSE</span>
+                  </button>
+                  <span className="lab-diagram-modal-title">{zoomedDiagram.label}</span>
+                </div>
+
+                <div className="lab-diagram-zoom-controls">
+                  <button
+                    className="lab-zoom-btn"
+                    onClick={() => setZoomScale((s) => Math.max(0.6, s - 0.2))}
+                    title="Zoom out"
+                  >
+                    −
+                  </button>
+                  <button
+                    className="lab-zoom-btn"
+                    onClick={() => setZoomScale(1.0)}
+                    title="Reset zoom"
+                  >
+                    {Math.round(zoomScale * 100)}%
+                  </button>
+                  <button
+                    className="lab-zoom-btn"
+                    onClick={() => setZoomScale((s) => Math.min(2.5, s + 0.2))}
+                    title="Zoom in"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
-              <div className="lab-diagram-zoom-controls">
-                <button
-                  className="lab-zoom-btn"
-                  onClick={() => setZoomScale((s) => Math.max(0.6, s - 0.2))}
-                  title="Zoom out"
-                >
-                  −
-                </button>
-                <button
-                  className="lab-zoom-btn"
-                  onClick={() => setZoomScale(1.0)}
-                  title="Reset zoom"
-                >
-                  {Math.round(zoomScale * 100)}%
-                </button>
-                <button
-                  className="lab-zoom-btn"
-                  onClick={() => setZoomScale((s) => Math.min(2.5, s + 0.2))}
-                  title="Zoom in"
-                >
-                  +
-                </button>
+              {/* Modal Image Body with scalable container */}
+              <div className="lab-diagram-modal-body">
+                <div className="lab-diagram-modal-viewport">
+                  <img
+                    src={zoomedDiagram.url}
+                    alt={zoomedDiagram.label}
+                    className="lab-diagram-modal-img"
+                    style={{
+                      transform: `scale(${zoomScale})`,
+                      transition: "transform 0.15s ease-out",
+                    }}
+                  />
+                </div>
               </div>
             </div>
-
-            {/* Modal Image Body with scalable container */}
-            <div className="lab-diagram-modal-body">
-              <div className="lab-diagram-modal-viewport">
-                <img
-                  src={zoomedDiagram.url}
-                  alt={zoomedDiagram.label}
-                  className="lab-diagram-modal-img"
-                  style={{
-                    transform: `scale(${zoomScale})`,
-                    transition: "transform 0.15s ease-out",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
