@@ -11,7 +11,11 @@ export default function Oscilloscope() {
       <div className="scope-header">
         <div className="scope-title-badge">
           <span className="scope-power-dot" />
-          OSCILLOSCOPE
+          <span>DUAL-TRACE OSCILLOSCOPE</span>
+        </div>
+        <div className="scope-channel-indicators">
+          <span className="scope-ch-tag ch1">CH1</span>
+          <span className="scope-ch-tag ch2">CH2</span>
         </div>
       </div>
       <div className="scope-display">

@@ -41,31 +41,44 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-logo">
-          <span className="logo-icon">⚡</span>
-          <h1>Telecoms-Trainer <span className="highlight">101</span> Simulator</h1>
+          <div className="app-logo-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12h4l3-9 4 18 3-9h6" />
+            </svg>
+          </div>
+          <div className="app-title-group">
+            <h1>Telecoms-Trainer <span className="highlight">101</span></h1>
+            <span className="app-subtitle">VIRTUAL DSP LAB & WORKSTATION</span>
+          </div>
         </div>
+
         <div className="app-actions">
+          {/* Active Telemetry */}
+          <div className="telemetry-badge">
+            <span className="telemetry-label">WIRES:</span>
+            <span className="telemetry-val">{wires.length}</span>
+          </div>
+          
+          <div className={`status-pill ${audioStarted ? "online" : "offline"}`}>
+            <span className="status-dot-pulse" />
+            <span>{audioStarted ? "DSP LIVE (44.1kHz)" : "STANDBY"}</span>
+          </div>
+
           <button
-            className={`start-btn ${audioStarted ? "power-off-btn" : ""}`}
+            className={`power-toggle-btn ${audioStarted ? "power-on-active" : "power-off-standby"}`}
             onClick={togglePower}
             disabled={loading}
-            style={audioStarted ? { background: "#c0392b", color: "#fff", borderColor: "#e74c3c" } : {}}
           >
-            {loading ? (
-              <><span className="spinner" /> Initializing...</>
-            ) : audioStarted ? (
-              <>⏻ Power Off</>
-            ) : (
-              <>⚡ Power On</>
-            )}
+            <span className="power-indicator-dot" />
+            <span>{loading ? "INITIALIZING..." : audioStarted ? "SYSTEM ON" : "POWER ON"}</span>
           </button>
-          {audioStarted && (
-            <div className="status-badge running">
-              <span className="status-dot" /> Running
-            </div>
-          )}
-          <button className="reset-btn" onClick={() => usePatchStore.getState().resetPatch()}>
-            ↺ Reset Wires
+
+          <button className="reset-patch-btn" onClick={() => usePatchStore.getState().resetPatch()} title="Clear all active patch wires">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            <span>RESET WIRES</span>
           </button>
         </div>
       </header>
@@ -80,9 +93,11 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <span>EMONA BiSKIT ETT-101 Virtual Simulator</span>
-        <span className="footer-sep">·</span>
-        <span>Experiment 4B: Bandwidth Limiting of Digital Signals</span>
+        <span className="footer-item">EMONA ETT-101 VIRTUAL TELECOMS TRAINER</span>
+        <span className="footer-sep">•</span>
+        <span className="footer-item">REAL-TIME DSP SIGNAL ENGINE</span>
+        <span className="footer-sep">•</span>
+        <span className="footer-item">DUAL-TRACE OSCILLOSCOPE</span>
       </footer>
     </div>
   );

@@ -44,9 +44,10 @@ export default function PatchPanel() {
           />
         ))}
         {wiringFrom && (
-          <span className="wiring-hint">
-            ● Click a destination port — or click empty board to cancel
-          </span>
+          <div className="wiring-hint-pill">
+            <span className="wiring-pulse-dot" />
+            <span>Select destination port (Click empty board to cancel)</span>
+          </div>
         )}
       </div>
 
