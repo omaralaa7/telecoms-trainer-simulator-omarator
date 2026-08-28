@@ -12,12 +12,12 @@ interface ScopeCanvasProps {
 }
 
 const GRID_DIVISIONS = 10;
-const GRID_COLOR = "rgba(0, 255, 65, 0.12)";
-const GRID_CENTER_COLOR = "rgba(0, 255, 65, 0.3)";
-const CH1_COLOR = "#00ff41";
-const CH2_COLOR = "#ffcc00";
-const TRIGGER_COLOR = "#ff4444";
-const BG_COLOR = "#0a0f0a";
+const GRID_COLOR = "rgba(78, 205, 196, 0.12)";
+const GRID_CENTER_COLOR = "rgba(78, 205, 196, 0.25)";
+const CH1_COLOR = "#ff9f1c"; // Vibrant Oscilloscope Orange
+const CH2_COLOR = "#00b4d8"; // Vibrant Oscilloscope Electric Blue
+const TRIGGER_COLOR = "#f1c40f"; // Amber Trigger Line
+const BG_COLOR = "#080e14";
 
 export default function ScopeCanvas({ width, height }: ScopeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -53,28 +53,21 @@ function App() {
         </div>
 
         <div className="app-actions">
-          {/* Active Telemetry */}
           <div className="telemetry-badge">
             <span className="telemetry-label">WIRES:</span>
             <span className="telemetry-val">{wires.length}</span>
           </div>
-          
-          <div className={`status-pill ${audioStarted ? "online" : "offline"}`}>
-            <span className="status-dot-pulse" />
-            <span>{audioStarted ? "DSP LIVE (44.1kHz)" : "STANDBY"}</span>
-          </div>
 
           <button
-            className={`power-toggle-btn ${audioStarted ? "power-on-active" : "power-off-standby"}`}
+            className={`primary-power-btn ${audioStarted ? "power-btn-off" : "power-btn-on"}`}
             onClick={togglePower}
             disabled={loading}
           >
-            <span className="power-indicator-dot" />
-            <span>{loading ? "INITIALIZING..." : audioStarted ? "SYSTEM ON" : "POWER ON"}</span>
+            {loading ? "INITIALIZING..." : audioStarted ? "POWER OFF" : "POWER ON"}
           </button>
 
           <button className="reset-patch-btn" onClick={() => usePatchStore.getState().resetPatch()} title="Clear all active patch wires">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
               <path d="M3 3v5h5" />
             </svg>

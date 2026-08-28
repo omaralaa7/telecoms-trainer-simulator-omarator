@@ -20,7 +20,7 @@ export default function ScopeControls() {
       {/* Row 1: Timebase + Trigger */}
       <div className="scope-controls-row">
         <div className="scope-control-group">
-          <label className="scope-label">TIME/DIV</label>
+          <label className="scope-label" style={{ color: "#a0aec0" }}>TIME/DIV</label>
           <select className="scope-select"
             value={scopeSettings.timebaseMs}
             onChange={(e) => setScopeSettings({ timebaseMs: parseFloat(e.target.value) })}>
@@ -30,8 +30,9 @@ export default function ScopeControls() {
           </select>
         </div>
         <div className="scope-control-group">
-          <label className="scope-label" style={{ color: "#ff4444" }}>TRIGGER</label>
+          <label className="scope-label" style={{ color: "#f1c40f" }}>TRIGGER</label>
           <select className="scope-select"
+            style={{ borderColor: "rgba(241, 196, 15, 0.3)" }}
             value={scopeSettings.triggerSource}
             onChange={(e) => setScopeSettings({ triggerSource: e.target.value as TriggerSource })}>
             <option value="ch1">CH1</option>
@@ -42,11 +43,11 @@ export default function ScopeControls() {
         </div>
       </div>
 
-      {/* Row 2: CH1 V/div + Position */}
+      {/* Row 2: CH1 V/div + Position (Uniform ORANGE #ff9f1c) */}
       <div className="scope-controls-row">
         <div className="scope-control-group">
-          <label className="scope-label" style={{ color: "#00ff41" }}>CH1 V/DIV</label>
-          <select className="scope-select"
+          <label className="scope-label" style={{ color: "#ff9f1c" }}>CH1 V/DIV</label>
+          <select className="scope-select scope-select-ch1"
             value={scopeSettings.ch1VPerDiv}
             onChange={(e) => setScopeSettings({ ch1VPerDiv: parseFloat(e.target.value) })}>
             {vDivOptions.map((v) => (
@@ -55,24 +56,24 @@ export default function ScopeControls() {
           </select>
         </div>
         <div className="scope-control-group">
-          <label className="scope-label" style={{ color: "#4ecdc4" }}>CH1 POS</label>
+          <label className="scope-label" style={{ color: "#ff9f1c" }}>CH1 POS</label>
           <div className="scope-offset-btns">
-            <button className="scope-offset-btn" onClick={() => nudgeOffset("ch1YOffset", 0.5)} title="Shift CH1 Up">
+            <button className="scope-offset-btn ch1" onClick={() => nudgeOffset("ch1YOffset", 0.5)} title="Shift CH1 Up">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
             </button>
-            <span className="scope-offset-val">{scopeSettings.ch1YOffset.toFixed(1)}</span>
-            <button className="scope-offset-btn" onClick={() => nudgeOffset("ch1YOffset", -0.5)} title="Shift CH1 Down">
+            <span className="scope-offset-val ch1">{scopeSettings.ch1YOffset.toFixed(1)}</span>
+            <button className="scope-offset-btn ch1" onClick={() => nudgeOffset("ch1YOffset", -0.5)} title="Shift CH1 Down">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Row 3: CH2 V/div + Position */}
+      {/* Row 3: CH2 V/div + Position (Uniform BLUE #00b4d8) */}
       <div className="scope-controls-row">
         <div className="scope-control-group">
-          <label className="scope-label" style={{ color: "#e74c3c" }}>CH2 V/DIV</label>
-          <select className="scope-select"
+          <label className="scope-label" style={{ color: "#00b4d8" }}>CH2 V/DIV</label>
+          <select className="scope-select scope-select-ch2"
             value={scopeSettings.ch2VPerDiv}
             onChange={(e) => setScopeSettings({ ch2VPerDiv: parseFloat(e.target.value) })}>
             {vDivOptions.map((v) => (
@@ -81,13 +82,13 @@ export default function ScopeControls() {
           </select>
         </div>
         <div className="scope-control-group">
-          <label className="scope-label" style={{ color: "#e74c3c" }}>CH2 POS</label>
+          <label className="scope-label" style={{ color: "#00b4d8" }}>CH2 POS</label>
           <div className="scope-offset-btns">
-            <button className="scope-offset-btn" onClick={() => nudgeOffset("ch2YOffset", 0.5)} title="Shift CH2 Up">
+            <button className="scope-offset-btn ch2" onClick={() => nudgeOffset("ch2YOffset", 0.5)} title="Shift CH2 Up">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
             </button>
-            <span className="scope-offset-val">{scopeSettings.ch2YOffset.toFixed(1)}</span>
-            <button className="scope-offset-btn" onClick={() => nudgeOffset("ch2YOffset", -0.5)} title="Shift CH2 Down">
+            <span className="scope-offset-val ch2">{scopeSettings.ch2YOffset.toFixed(1)}</span>
+            <button className="scope-offset-btn ch2" onClick={() => nudgeOffset("ch2YOffset", -0.5)} title="Shift CH2 Down">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
           </div>
@@ -97,12 +98,12 @@ export default function ScopeControls() {
       {/* Row 4: X-Offset (horizontal scroll) */}
       <div className="scope-controls-row">
         <div className="scope-control-group" style={{ flex: 1 }}>
-          <label className="scope-label">X POSITION</label>
+          <label className="scope-label" style={{ color: "#a0aec0" }}>X POSITION</label>
           <div className="scope-offset-btns">
             <button className="scope-offset-btn" onClick={() => nudgeOffset("xOffset", -0.5)} title="Pan Left">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
-            <span className="scope-offset-val">{scopeSettings.xOffset.toFixed(1)}</span>
+            <span className="scope-offset-val xpos">{scopeSettings.xOffset.toFixed(1)}</span>
             <button className="scope-offset-btn" onClick={() => nudgeOffset("xOffset", 0.5)} title="Pan Right">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </button>
@@ -117,15 +118,13 @@ export default function ScopeControls() {
       {/* Row 5: Run/Stop + Single */}
       <div className="scope-controls-row scope-btn-row">
         <button
-          className={`scope-btn ${scopeSettings.running ? "scope-btn-running" : "scope-btn-stopped"}`}
+          className={`scope-action-btn ${scopeSettings.running ? "scope-btn-stop" : "scope-btn-run"}`}
           onClick={() => setScopeSettings({ running: !scopeSettings.running })}>
-          <span className="btn-indicator-dot" />
-          <span>{scopeSettings.running ? "STOP" : "RUN"}</span>
+          {scopeSettings.running ? "STOP" : "RUN"}
         </button>
-        <button className="scope-btn scope-btn-single"
+        <button className="scope-action-btn scope-btn-single"
           onClick={() => { setScopeSettings({ running: true }); setTimeout(() => setScopeSettings({ running: false }), 50); }}>
-          <span className="btn-indicator-dot" />
-          <span>SINGLE</span>
+          SINGLE
         </button>
       </div>
     </div>

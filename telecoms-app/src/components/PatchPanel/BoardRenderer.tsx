@@ -1245,17 +1245,17 @@ export default function BoardRenderer() {
       {/* SCOPE TERMINAL STRIP                                          */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <g>
-        <rect x={W - 65} y={ROW1_Y} width={50} height={ROW1_H} fill="#1a2e22" stroke="#2d5a3f" strokeWidth={1.5} rx={3} />
-        <rect x={W - 65} y={ROW1_Y} width={50} height={20} fill="#143d24" rx={3} />
-        <text x={W - 40} y={ROW1_Y + 14} textAnchor="middle" fontSize="7" fontWeight="bold" fill="#4ecdc4" letterSpacing="0.8">SCOPE</text>
+        <rect x={W - 65} y={ROW1_Y} width={50} height={ROW1_H} fill="#131c26" stroke="#253545" strokeWidth={1.5} rx={3} />
+        <rect x={W - 65} y={ROW1_Y} width={50} height={20} fill="#182736" rx={3} />
+        <text x={W - 40} y={ROW1_Y + 14} textAnchor="middle" fontSize="7" fontWeight="bold" fill="#48cae4" letterSpacing="0.8">SCOPE</text>
 
-        <rect x={W - 58} y={ROW1_Y + 28} width={36} height={22} fill="#0d1f14" stroke="#2d5a3f" strokeWidth={0.8} rx={2} />
-        <path d={`M ${W - 54} ${ROW1_Y + 39} q 5 -8 9 0 q 5 8 9 0 q 5 -8 9 0`} fill="none" stroke="#4ecdc4" strokeWidth={1.2} />
+        <rect x={W - 58} y={ROW1_Y + 28} width={36} height={22} fill="#0d1720" stroke="#253545" strokeWidth={0.8} rx={2} />
+        <path d={`M ${W - 54} ${ROW1_Y + 39} q 5 -8 9 0 q 5 8 9 0 q 5 -8 9 0`} fill="none" stroke="#ff9f1c" strokeWidth={1.2} />
 
-        <text x={W - 40} y={ROW1_Y + 68} textAnchor="middle" fontSize="6.5" fill="#4ecdc4" fontWeight="bold">CH1</text>
+        <text x={W - 40} y={ROW1_Y + 68} textAnchor="middle" fontSize="6.5" fill="#ff9f1c" fontWeight="bold">CH1</text>
         <PortJack id="scope.ch1" x={W - 40} y={ROW1_Y + 84} type="analog" direction="in" label="" labelPos="none" />
 
-        <text x={W - 40} y={ROW1_Y + 120} textAnchor="middle" fontSize="6.5" fill="#e74c3c" fontWeight="bold">CH2</text>
+        <text x={W - 40} y={ROW1_Y + 120} textAnchor="middle" fontSize="6.5" fill="#00b4d8" fontWeight="bold">CH2</text>
         <PortJack id="scope.ch2" x={W - 40} y={ROW1_Y + 136} type="analog" direction="in" label="" labelPos="none" />
 
         <text x={W - 40} y={ROW1_Y + 172} textAnchor="middle" fontSize="5.5" fill="#f1c40f" fontWeight="bold">TRIGGER</text>
