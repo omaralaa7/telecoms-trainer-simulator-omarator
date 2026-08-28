@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { usePatchStore } from "../../store/patchStore";
 import { LAB_EXPERIMENTS } from "../../data/labExperiments";
+import { LAB_DIAGRAMS } from "./LabDiagrams";
 import type { LabExperiment, LabPart } from "../../types";
 
 /**
@@ -200,6 +201,16 @@ export default function LabExperimentsHub() {
               <span className="lab-meta-exp">Experiment {selectedLab.expNumber}</span>
               <p className="lab-meta-desc">{selectedLab.description}</p>
             </div>
+
+            {/* Block Diagram */}
+            {LAB_DIAGRAMS[selectedLab.id] && (
+              <div className="lab-diagram-container">
+                <div className="lab-diagram-label">BLOCK DIAGRAM</div>
+                <div className="lab-diagram-wrapper">
+                  {(() => { const Diagram = LAB_DIAGRAMS[selectedLab.id]; return <Diagram />; })()}
+                </div>
+              </div>
+            )}
 
             {/* Parts List */}
             <div className="lab-parts-list">

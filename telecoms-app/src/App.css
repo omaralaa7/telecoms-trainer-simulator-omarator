@@ -503,6 +503,37 @@ body {
   color: var(--text-secondary);
 }
 
+/* ─── Lab Block Diagram ──────────────────────────────────────── */
+.lab-diagram-container {
+  padding: 12px 14px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lab-diagram-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.lab-diagram-wrapper {
+  background: #fefefe;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  overflow-x: auto;
+  padding: 4px;
+}
+
+.lab-diagram-wrapper svg,
+.lab-diagram-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  min-width: 400px;
+}
+
 /* ─── Lab Part Cards ─────────────────────────────────────────── */
 .lab-parts-list {
   padding: 12px 14px;
