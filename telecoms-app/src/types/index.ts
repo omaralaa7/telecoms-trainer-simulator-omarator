@@ -144,6 +144,8 @@ export interface LabPart {
   title: string;
   description: string;
   wires: PresetWire[];
+  diagramUrl?: string;
+  figureLabel?: string;
   scopeSettings?: Partial<ScopeSettings>;
   params?: Record<string, Record<string, number | string>>;
 }

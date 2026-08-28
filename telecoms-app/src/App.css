@@ -503,35 +503,106 @@ body {
   color: var(--text-secondary);
 }
 
-/* ─── Lab Block Diagram ──────────────────────────────────────── */
-.lab-diagram-container {
-  padding: 12px 14px 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.lab-diagram-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.lab-diagram-wrapper {
-  background: #fefefe;
+/* ─── Lab In-Card Block Diagrams ───────────────────────────────── */
+.lab-part-diagram-container {
+  margin: 8px 0 12px;
+  background: #ffffff;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  overflow-x: auto;
-  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-.lab-diagram-wrapper svg,
-.lab-diagram-svg {
+.lab-part-diagram-container:hover {
+  border-color: rgba(243, 156, 18, 0.5);
+  box-shadow: 0 4px 16px rgba(243, 156, 18, 0.2);
+  transform: translateY(-1px);
+}
+
+.lab-part-diagram-image {
   width: 100%;
   height: auto;
   display: block;
-  min-width: 400px;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 6px 4px 2px;
+}
+
+.lab-part-diagram-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: #f4f6f8;
+  border-top: 1px solid #e1e8ed;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #333333;
+}
+
+.zoom-icon {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* ─── Fullscreen Diagram Lightbox Modal ───────────────────────── */
+.lab-diagram-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+.lab-diagram-modal-card {
+  background: #182230;
+  border: 1px solid rgba(243, 156, 18, 0.35);
+  border-radius: var(--radius-md);
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.lab-diagram-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lab-diagram-modal-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f39c12;
+}
+
+.lab-diagram-modal-body {
+  padding: 12px;
+  background: #ffffff;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lab-diagram-modal-img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  display: block;
 }
 
 /* ─── Lab Part Cards ─────────────────────────────────────────── */

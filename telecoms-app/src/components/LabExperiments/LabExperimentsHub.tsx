@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { usePatchStore } from "../../store/patchStore";
 import { LAB_EXPERIMENTS } from "../../data/labExperiments";
-import { LAB_DIAGRAMS } from "./LabDiagrams";
 import type { LabExperiment, LabPart } from "../../types";
 
 /**
  * LabExperimentsHub — Dropdown trigger + slide-out Lab Guide Panel
+ * with in-card high-res block diagrams extracted directly from EMONA manuals.
  */
 export default function LabExperimentsHub() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -14,6 +14,7 @@ export default function LabExperimentsHub() {
   const [loadedPartId, setLoadedPartId] = useState<string | null>(null);
   const [guideActive, setGuideActive] = useState(false);
   const [guidePartId, setGuidePartId] = useState<string | null>(null);
+  const [zoomedDiagram, setZoomedDiagram] = useState<{ url: string; label: string } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadPreset = usePatchStore((s) => s.loadPreset);
@@ -41,7 +42,6 @@ export default function LabExperimentsHub() {
     if (!part) return;
 
     if (guideStep >= part.wires.length) {
-      // All wires placed
       clearGuide();
       setGuideActive(false);
       setGuidePartId(null);
@@ -94,10 +94,8 @@ export default function LabExperimentsHub() {
 
   const handleGuideMode = useCallback(
     (part: LabPart) => {
-      // Reset wires and start guide
       usePatchStore.getState().resetPatch();
 
-      // Apply params and scope settings
       if (part.params) {
         const currentParams = usePatchStore.getState().params;
         const mergedParams = { ...currentParams };
@@ -115,7 +113,6 @@ export default function LabExperimentsHub() {
       setGuideActive(true);
       setLoadedPartId(null);
 
-      // Start at step 0
       const firstWire = part.wires[0];
       if (firstWire) {
         setGuideHighlights([firstWire.fromPortId, firstWire.toPortId], 0);
@@ -202,16 +199,6 @@ export default function LabExperimentsHub() {
               <p className="lab-meta-desc">{selectedLab.description}</p>
             </div>
 
-            {/* Block Diagram */}
-            {LAB_DIAGRAMS[selectedLab.id] && (
-              <div className="lab-diagram-container">
-                <div className="lab-diagram-label">BLOCK DIAGRAM</div>
-                <div className="lab-diagram-wrapper">
-                  {(() => { const Diagram = LAB_DIAGRAMS[selectedLab.id]; return <Diagram />; })()}
-                </div>
-              </div>
-            )}
-
             {/* Parts List */}
             <div className="lab-parts-list">
               {selectedLab.parts.map((part, index) => {
@@ -228,6 +215,26 @@ export default function LabExperimentsHub() {
                       <h3 className="lab-part-title">{part.title}</h3>
                     </div>
                     <p className="lab-part-desc">{part.description}</p>
+
+                    {/* Block Diagram Image */}
+                    {part.diagramUrl && (
+                      <div
+                        className="lab-part-diagram-container"
+                        onClick={() => setZoomedDiagram({ url: part.diagramUrl!, label: part.figureLabel || part.title })}
+                        title="Click to expand diagram"
+                      >
+                        <img
+                          src={part.diagramUrl}
+                          alt={part.figureLabel || part.title}
+                          className="lab-part-diagram-image"
+                          loading="lazy"
+                        />
+                        <div className="lab-part-diagram-badge">
+                          <span>{part.figureLabel || "Block Diagram"}</span>
+                          <span className="zoom-icon">🔍</span>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="lab-part-info">
                       <span className="lab-part-wire-count">
@@ -300,6 +307,26 @@ export default function LabExperimentsHub() {
             </div>
           </div>
         </>
+      )}
+
+      {/* ─── Fullscreen Zoom Modal for Block Diagrams ─── */}
+      {zoomedDiagram && (
+        <div className="lab-diagram-modal-backdrop" onClick={() => setZoomedDiagram(null)}>
+          <div className="lab-diagram-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="lab-diagram-modal-header">
+              <span className="lab-diagram-modal-title">{zoomedDiagram.label}</span>
+              <button className="lab-panel-close" onClick={() => setZoomedDiagram(null)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="lab-diagram-modal-body">
+              <img src={zoomedDiagram.url} alt={zoomedDiagram.label} className="lab-diagram-modal-img" />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
