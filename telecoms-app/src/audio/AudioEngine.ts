@@ -62,7 +62,15 @@ export class AudioEngine {
 
     for (const sig of signals) {
       const osc = this.ctx.createOscillator();
-      osc.type = sig.type;
+      if (sig.id === "ms.100k_cos") {
+        // True cosine phase: cos(wt) -> real=[0, 1], imag=[0, 0]
+        const realCos = new Float32Array([0, 1]);
+        const imagCos = new Float32Array([0, 0]);
+        const cosWave = this.ctx.createPeriodicWave(realCos, imagCos);
+        osc.setPeriodicWave(cosWave);
+      } else {
+        osc.type = sig.type;
+      }
       osc.frequency.value = sig.freq;
       osc.start();
       this.oscillators.push(osc);

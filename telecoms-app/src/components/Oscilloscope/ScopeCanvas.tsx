@@ -152,11 +152,12 @@ export default function ScopeCanvas({ width, height }: ScopeCanvasProps) {
     ctx.fillText("CH2", 18, 30);
 
     // Status bar
+    const timebaseStr = timebaseMs < 0.1 ? `${Math.round(timebaseMs * 1000)} µs/div` : `${timebaseMs} ms/div`;
     ctx.fillStyle = running ? "#00ff41" : "#ffcc00";
     ctx.font = "10px 'JetBrains Mono', monospace";
     ctx.textAlign = "right";
-    ctx.fillText(`${timebaseMs} ms/div`, width - 8, 16);
-    ctx.fillText(running ? "● RUN" : "⏸ SINGLE/STOP", width - 8, 30);
+    ctx.fillText(timebaseStr, width - 8, 16);
+    ctx.fillText(running ? "● RUN" : "⏸ STOPPED", width - 8, 30);
     ctx.textAlign = "left";
 
     // Connection hint
@@ -314,7 +315,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
-/** Draw a waveform with vertical offset */
+/** Draw a waveform with vertical offset and smooth interpolation */
 function drawWaveform(
   ctx: CanvasRenderingContext2D, data: Float32Array,
   startIdx: number, numSamples: number,
@@ -332,13 +333,59 @@ function drawWaveform(
   ctx.shadowBlur = 4;
   ctx.beginPath();
 
-  for (let i = 0; i < numSamples; i++) {
-    const idx = startIdx + i;
-    if (idx >= data.length) break;
-    const x = (i / numSamples) * w;
-    const y = centerY - data[idx] * pixelsPerVolt;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  // If zoomed in (microsecond range with fewer samples), use Catmull-Rom spline interpolation
+  if (numSamples < 200) {
+    const points: Array<{ x: number; y: number }> = [];
+    for (let i = 0; i < numSamples; i++) {
+      const idx = startIdx + i;
+      if (idx >= data.length) break;
+      const x = (i / (numSamples - 1 || 1)) * w;
+      const y = centerY - data[idx] * pixelsPerVolt;
+      points.push({ x, y });
+    }
+
+    if (points.length > 0) {
+      ctx.moveTo(points[0].x, points[0].y);
+      if (points.length < 3) {
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+      } else {
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[Math.max(0, i - 1)];
+          const p1 = points[i];
+          const p2 = points[i + 1];
+          const p3 = points[Math.min(points.length - 1, i + 2)];
+
+          for (let t = 0; t <= 1; t += 0.125) {
+            const t2 = t * t;
+            const t3 = t2 * t;
+            const x = 0.5 * (
+              (2 * p1.x) +
+              (-p0.x + p2.x) * t +
+              (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+              (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+            );
+            const y = 0.5 * (
+              (2 * p1.y) +
+              (-p0.y + p2.y) * t +
+              (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+              (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+            );
+            ctx.lineTo(x, y);
+          }
+        }
+      }
+    }
+  } else {
+    for (let i = 0; i < numSamples; i++) {
+      const idx = startIdx + i;
+      if (idx >= data.length) break;
+      const x = (i / numSamples) * w;
+      const y = centerY - data[idx] * pixelsPerVolt;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
   }
 
   ctx.stroke();

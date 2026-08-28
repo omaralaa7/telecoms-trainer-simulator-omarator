@@ -8,7 +8,20 @@ export default function ScopeControls() {
   const scopeSettings = usePatchStore((s) => s.scopeSettings);
   const setScopeSettings = usePatchStore((s) => s.setScopeSettings);
 
-  const timebaseOptions = [0.1, 0.2, 0.5, 1, 2, 5, 10];
+  const timebaseOptions = [
+    { value: 0.005, label: "5 µs" },
+    { value: 0.01, label: "10 µs" },
+    { value: 0.02, label: "20 µs" },
+    { value: 0.05, label: "50 µs" },
+    { value: 0.1, label: "0.1 ms" },
+    { value: 0.2, label: "0.2 ms" },
+    { value: 0.5, label: "0.5 ms" },
+    { value: 1, label: "1 ms" },
+    { value: 2, label: "2 ms" },
+    { value: 5, label: "5 ms" },
+    { value: 10, label: "10 ms" },
+    { value: 20, label: "20 ms" },
+  ];
   const vDivOptions = [0.2, 0.5, 1, 2, 5];
 
   const nudgeOffset = (key: "ch1YOffset" | "ch2YOffset" | "xOffset", delta: number) => {
@@ -24,8 +37,8 @@ export default function ScopeControls() {
           <select className="scope-select"
             value={scopeSettings.timebaseMs}
             onChange={(e) => setScopeSettings({ timebaseMs: parseFloat(e.target.value) })}>
-            {timebaseOptions.map((v) => (
-              <option key={v} value={v}>{v} ms</option>
+            {timebaseOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
